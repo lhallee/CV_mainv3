@@ -129,7 +129,6 @@ class Solver(object):
                 if self.multi_losses:
                     loss_hev = self.criterion(SR[:,:,1], GT[:,:,1])
                     loss_lob = self.criterion(SR[:,:,0], GT[:,:,0])
-                    print('Loss HEV, LOB', loss_hev.detach().cpu().numpy(), loss_lob.detach().cpu().numpy())
                     smooth = 1
                     if loss_lob > loss_hev:
                         ratio = (loss_lob + smooth) / (loss_hev + smooth)
@@ -185,28 +184,6 @@ class Solver(object):
                 k += 1
         return recon
 
-    SRs = np.concatenate([self.unet(batch.to(self.device)).detach().cpu().numpy() for batch in loop])
-    SRs = np.transpose(SRs, axes=(0, 2, 3, 1))  # back to normal img format
-    if self.eval_type == 'Crops':
-        for i in tqdm(range(len(SRs))):
-            recon = np.hstack((SRs[i][:, :, 1], SRs[i][:, :, 0]))  # stack results together
-            plt.imsave(self.result_path + 'eval' + now + self.eval_type + str(i) + '_img.png', recon)
-
-    elif self.eval_type == 'Windowed':
-        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Evaluation'):
-            try:
-                single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
-                recon_lob = self.window_recon(single_SR[:, :, :, 0])
-                recon_hev = self.window_recon(single_SR[:, :, :, 1])
-                # recon_lob = filters.threshold_local(recon_lob, 101)
-                # recon_hev = filters.threshold_local(recon_hev, 21)
-                recon_lob = recon_lob.reshape(recon_lob.shape[0],
-                                              recon_lob.shape[1])  # reshape from dim,dim,1 to dim, dim
-                recon_hev = recon_hev.reshape(recon_hev.shape[0], recon_hev.shape[1])
-                recon = np.hstack((recon_hev, recon_lob))  # stack results together
-                plt.imsave(self.result_path + 'eval' + now + str(i) + '.png', recon)
-            except:
-                continue
 
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):

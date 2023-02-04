@@ -4,7 +4,6 @@ import os
 from data_processing import training_processing, eval_processing
 from run_model import Solver
 from plots import preview_crops, preview_crops_eval
-from mock_data import to_dataloader_mock
 from torch.backends import cudnn
 from evaluation import eval_solver
 
@@ -47,14 +46,6 @@ def main(config):
         vis_imgs, vis_GTs = train_loader.dataset[:10]
         preview_crops(vis_imgs, vis_GTs, config.num_class)
 
-        solver = Solver(config, train_loader, valid_loader)
-
-    if config.data_type == 'Mock':
-        train_loader, valid_loader, test_loader = to_dataloader_mock(dim=config.image_size,
-                                                                     train_per=config.train_per,
-                                                                     batch_size=config.batch_size
-                                                                     )
-        print(len(train_loader), len(valid_loader), len(test_loader))
         solver = Solver(config, train_loader, valid_loader)
 
     #Train utilizes random weights to train until stopping criteria of the number of epochs
