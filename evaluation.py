@@ -5,7 +5,6 @@ from skimage import filters
 import cv2
 from glob import glob
 from natsort import natsorted
-from plots import eval_saver
 from tqdm import tqdm
 from models import U_Net, R2U_Net, AttU_Net, R2AttU_Net
 from matplotlib import pyplot as plt
@@ -96,7 +95,3 @@ class eval_solver:
                     plt.imsave(self.result_path + 'eval' + now + str(i) + '.png', recon)
                 except:
                     continue
-
-        elif self.eval_type == 'Scaled':
-            for i in range(len(SRs)):
-                eval_saver(self.result_path, SRs[i][:,:,0], i, self.eval_type)

@@ -7,7 +7,6 @@ from tqdm import tqdm
 from metrics import _calculate_overlap_metrics
 from models import *
 from custom_model_components import *
-from plots import checker, test_saver
 from natsort import natsorted
 from glob import glob
 from skimage.util import view_as_windows

@@ -3,7 +3,6 @@ import argparse
 import os
 from data_processing import training_processing, eval_processing
 from run_model import Solver
-from plots import preview_crops, preview_crops_eval
 from torch.backends import cudnn
 from evaluation import eval_solver
 
@@ -32,10 +31,6 @@ def main(config):
         data_setup = training_processing(config)
         train_loader, valid_loader = data_setup.to_dataloader()
         print(len(train_loader), len(valid_loader))
-        #Visualize 10 crops for consistency
-        vis_imgs, vis_GTs = train_loader.dataset[:10]
-        preview_crops(vis_imgs, vis_GTs, config.num_class)
-
         solver = Solver(config, train_loader, valid_loader)
 
     #Train utilizes random weights to train until stopping criteria of the number of epochs
@@ -47,7 +42,7 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Model hyper-parameters
-    parser.add_argument('--image_size', type=int, default=256)
+    parser.add_argument('--image_size', type=int, default=1024)
     parser.add_argument('--t', type=int, default=3, help='Number of recurrent steps')
     parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
     parser.add_argument('--img_ch', type=int, default=3)
