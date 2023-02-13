@@ -63,17 +63,17 @@ class Solver(object):
 
     def build_model(self):
         if self.model_type == 'U_Net':
-            self.unet = U_Net(img_ch=self.img_ch, output_ch=self.output_ch)
+            self.unet = U_Net(img_ch=self.img_ch, output_ch=self.num_class)
         elif self.model_type == 'R2U_Net':
-            self.unet = R2U_Net(img_ch=self.img_ch, output_ch=self.output_ch, t=self.t)
+            self.unet = R2U_Net(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
         elif self.model_type == 'AttU_Net':
-            self.unet = AttU_Net(img_ch=self.img_ch, output_ch=self.output_ch)
+            self.unet = AttU_Net(img_ch=self.img_ch, output_ch=self.num_class)
         elif self.model_type == 'R2AttU_Net':
-            self.unet = R2AttU_Net(img_ch=self.img_ch, output_ch=self.output_ch, t=self.t)
+            self.unet = R2AttU_Net(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
         elif self.model_type == 'BigNET':
-            self.unet = BigR2AttU_Net(img_ch=self.img_ch, output_ch=self.output_ch, t=self.t)
+            self.unet = BigR2AttU_Net(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
         elif self.model_type == 'Vis':
-            self.unet = R2AttU_Net_vis(img_ch=self.img_ch, output_ch=self.output_ch, t=self.t)
+            self.unet = R2AttU_Net_vis(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
 
 
         if self.loss == 'BCE':
