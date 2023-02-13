@@ -136,11 +136,6 @@ class Solver(object):
                     loss = (loss_hev + loss_lob) * ratio / 2
                 else:
                     loss = self.criterion(SR, GT)
-                #if progess = True call checker to image SR and GT
-                if self.progress and length == 0:
-                    checker(feed_img=images.detach().cpu().numpy(),
-                            SR=SR.detach().cpu().numpy(), GT=GT.detach().cpu().numpy(),
-                            num_class=self.output_ch)
                 epoch_loss += loss.item()
                 #Backprop + optimize
                 self.optimizer.zero_grad()
