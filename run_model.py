@@ -31,7 +31,7 @@ class Solver(object):
         self.criterion = None
         self.loss = config.loss
         self.img_ch = config.img_ch
-        self.output_ch = config.output_ch
+        self.num_class = config.num_class
         self.data_type = config.data_type
         self.scheduler = config.scheduler
         self.dim = config.image_size
@@ -182,7 +182,9 @@ class Solver(object):
 
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):
-        GTs = natsorted(glob(self.val_GT_paths + '*'))  # natural sort
+        GTs = []
+        for i in range(self.num_class):
+            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*'))[:1])
         if self.num_col is None:
             self.val_GT = np.concatenate([
                 np.concatenate([np.array(cv2.imread(GTs[i][j], 2), dtype=np.float32).reshape(1,
