@@ -8,8 +8,6 @@ from torch.utils import data
 from skimage.util import view_as_windows
 from tqdm import tqdm
 from glob import glob
-from sklearn.model_selection import train_test_split
-
 
 class ImageSet(data.Dataset):
     # Custom pytorch dataset, simply indexes imgs and gts
@@ -38,7 +36,7 @@ class training_processing:
     def __init__(self, config):
         self.train_img_path = config.train_img_path
         self.val_img_path = config.val_img_path
-        self.val_GT_path = config.val_GT_path
+        self.val_GT_path = config.val_GT_paths
         self.GT_paths = config.GT_paths
         self.dim = config.image_size
         self.num_class = config.num_class
@@ -47,7 +45,7 @@ class training_processing:
 
     def crop_augment_GTs(self, GT):
         GTs = view_as_windows(GT, (self.dim, self.dim, self.num_class), step=self.dim)
-        a, b, c, d, e, f = imgs.shape
+        a, b, c, d, e, f = GTs.shape
         GTs = GTs.reshape(a * b, self.dim, self.dim, self.num_class)
         GTs[GTs < 1] = 0 #GT pixels should have 0 background
         GTs[GTs > 0] = 1 #and actual features 1
@@ -88,20 +86,19 @@ class training_processing:
         final_crops = np.concatenate((imgs, imgs_90, imgs_hflip, imgs_vflip, imgs_jitter_1)) #combine all together
         return final_crops
 
-    def crop_augment_val(self, img):
+    def crop_val(self, img):
         img = np.array(cv2.imread(img, 1)) / 255.0  # load and scale img
-        imgs = view_as_windows(img, (2 * self.dim, 2 * self.dim, 3), step=int(self.dim / 2))
+        imgs = view_as_windows(img, (self.dim, self.dim, 3), step=int(self.dim / 2))
         a, b, c, d, e, f = imgs.shape
-        imgs = imgs.reshape(a * b, 2 * self.dim, 2 * self.dim, 3)
-        imgs = np.transpose(imgs, axes=(0, 3, 1, 2))
-        return imgs, a, b
+        imgs = imgs.reshape(a * b, self.dim, self.dim, 3)
+        return imgs
 
     def to_dataloader(self):
-        train_img_paths = natsorted(glob(self.train_img_path + '*'))  # natural sort
-        val_img_paths = natsorted(glob(self.val_img_path + '*'))
+        train_img_paths = natsorted(glob(self.train_img_path + '*'))[:1] # natural sort
+        val_img_paths = natsorted(glob(self.val_img_path + '*'))[:1]
         GTs = []
-        for i in range(len(self.num_class)):
-            GTs.append([natsorted(glob(self.GT_paths[i])) + '*'])
+        for i in range(self.num_class):
+            GTs.append(natsorted(glob(self.GT_paths[i] + '*'))[:1])
 
         assert len(train_img_paths) * self.num_class == sum([len(GTs[i]) for i in range(len(GTs))]),\
             'Need GT for every Image.'
@@ -120,8 +117,9 @@ class training_processing:
         crop_GTs = np.concatenate([self.crop_augment_GTs(GT=read_GT[i])
                                    for i in tqdm(range(len(read_GT)), desc='Cropping GTs')], axis=0)
 
-        val_imgs = np.concatenate([self.crop_augment_val(img=val_img_paths[i])
+        val_imgs = np.concatenate([self.crop_val(img=val_img_paths[i])
                                    for i in tqdm(range(len(val_img_paths)), desc='Cropping Val')], axis=0)
+
 
         #numpy array to torch tensor, move around columns for pytorch convolution
         crop_imgs = np.transpose(crop_imgs, axes=(0, 3, 1, 2))
@@ -138,7 +136,7 @@ class training_processing:
         val_loader = data.DataLoader(val_data, batch_size=self.batch_size,
                                      shuffle=False, drop_last=False, num_workers=self.num_cpu)
 
-        return train_loader, val_loader, num_col, num_row
+        return train_loader, val_loader
 
 
 class eval_processing:

@@ -34,6 +34,7 @@ class Solver(object):
         self.output_ch = config.output_ch
         self.data_type = config.data_type
         self.scheduler = config.scheduler
+        self.dim = config.image_size
 
         #Hyper-parameters
         self.lr = config.lr
@@ -56,11 +57,9 @@ class Solver(object):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.unet_path = self.model_path + self.model_type + self.data_type + self.loss + str(self.num_epochs) + str(
             self.lr) + '.pkl' #descriptive name from settings
-        self.progress = config.progress
         self.num_col = None
         self.num_row = None
-        self.val_GT
-        self.dim = config.image_size
+
 
     def build_model(self):
         if self.model_type == 'U_Net':
@@ -176,11 +175,12 @@ class Solver(object):
     def window_recon(self, SR):
         recon = np.zeros(((self.num_col + 1) * self.dim, (self.num_row + 1) * self.dim))
         k = 0
-        halfdim = int(self.dim/2)
+        qdim = int(self.dim / 4)
+        hdim = int(self.dim / 2)
         for i in range(self.num_col):
             for j in range(self.num_row):
-                inner = SR[k][int(1.5 * halfdim):int(2.5 * halfdim), int(1.5 * halfdim):int(2.5 * halfdim)]
-                recon[i * self.dim:(i + 1) * self.dim, j * self.dim:(j + 1) * self.dim] = inner
+                inner = SR[k][qdim:self.dim, qdim:self.dim]
+                recon[i * hdim:(i + 1) * hdim, j * hdim:(j + 1) * hdim] = inner
                 k += 1
         return recon
 
@@ -201,7 +201,7 @@ class Solver(object):
                                                                                                  1], 1)
                                 for j in range(len(GTs[i]))], axis=0)
                 for i in range(len(GTs))], axis=3)
-            a, b, c, d, e, f = view_as_windows(GTs[0], (2 * self.dim, 2 * self.dim, 3),
+            a, b, c, d, e, f = view_as_windows(GTs[0], (self.dim, self.dim, 3),
                                                step=int(self.dim / 2)).shape
             self.num_col, self.num_row = a, b
 
@@ -222,7 +222,9 @@ class Solver(object):
                 single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
                 recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
                                         for i in range(len(self.val_GT_paths))], axis=3)
+                print(recon.shape)
                 GT = self.val_GT[i]
+                print(GT.shape)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(recon, GT)
                 acc += _acc.item()

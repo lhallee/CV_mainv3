@@ -6,7 +6,7 @@ def preview_crops(imgs, GTs, num_class=2):
     rows = 1
     columns = num_class + 1
     #Back to normal image format
-    imgs = np.transpose(np.array(imgs), axes=(0, 2, 3, 1))
+    imgs = np.transpose(np.array(imgs) * 255.0, axes=(0, 2, 3, 1))
     GTs = np.transpose(np.array(GTs), axes=(0, 2, 3, 1))
     for i in range(len(imgs)):
         fig = plt.figure(figsize=(10, 7))

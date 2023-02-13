@@ -13,16 +13,6 @@ def main(config):
     config.output_ch = config.num_class
     cudnn.benchmark = True
 
-    # Create directories if not exist
-    if not os.path.exists(config.result_path):
-        os.makedirs(config.result_path)
-    if not os.path.exists(config.model_path):
-        os.makedirs(config.model_path)
-    if not os.path.exists(config.img_path):
-        os.makedirs(config.img_path)
-    if not os.path.exists(config.GT_path):
-        os.makedirs(config.GT_path)
-
     print(config)
     if config.mode == 'CV':
         from cross_validation import cross_validator
@@ -55,7 +45,6 @@ def main(config):
 
 
 if __name__ == '__main__':
-    #For running from command line
     parser = argparse.ArgumentParser()
     # Model hyper-parameters
     parser.add_argument('--image_size', type=int, default=256)
@@ -63,7 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
     parser.add_argument('--img_ch', type=int, default=3)
     parser.add_argument('--scheduler', type=str, default='cosine', help='None, exp, cosine')
-    parser.add_argument('--model_type', type=str, default='R2AttU_Net', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigR2AttU_Net')
+    parser.add_argument('--model_type', type=str, default='U_Net', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigR2AttU_Net')
 
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=10)
