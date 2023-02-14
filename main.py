@@ -60,11 +60,16 @@ if __name__ == '__main__':
 
     # Paths
     parser.add_argument('--model_path', type=str, default='None', help='Path for model weights')
-    parser.add_argument('--train_img_path', type=str, default='./train_img/', help='Path for training images')
-    parser.add_argument('--val_img_path', type=str, default='./val_img/', help='Path for validation images')
-    parser.add_argument('--val_GT_paths', type=list, default=['./val_GT_1/', './val_GT_2/'], help='Path for validation GT')
-    parser.add_argument('--GT_paths', type=list, default=['./GT_1/', './GT_2/'], help='List of paths for training GT (one for each class)')
-    parser.add_argument('--eval_img_path', type=str, default='./eval_img/', help='Images for 2D reconstruction evaluation')
+    parser.add_argument('--train_img_path', type=str, default='./img_data/train_img/',
+                        help='Path for training images')
+    parser.add_argument('--val_img_path', type=str, default='./img_data/val_img/',
+                        help='Path for validation images')
+    parser.add_argument('--val_GT_paths', type=list, default=['./img_data/val_GT_1/', './img_data/val_GT_2/'],
+                        help='Path for validation GT')
+    parser.add_argument('--GT_paths', type=list, default=['./img_data/GT_1/', './img_data/GT_2/'],
+                        help='List of paths for training GT (one for each class)')
+    parser.add_argument('--eval_img_path', type=str, default='./img_data/eval_img/',
+                        help='Images for 2D reconstruction evaluation')
     parser.add_argument('--result_path', type=str, default='./result/', help='Path for results')
 
     # misc

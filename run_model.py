@@ -54,8 +54,12 @@ class Solver(object):
 
         #MISC
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.unet_path = self.model_path + self.model_type + self.data_type + self.loss + str(self.num_epochs) + str(
-            self.lr) + '.pkl' #descriptive name from settings
+        if self.model_path != 'None':
+            self.unet_path = self.model_path + self.model_type + self.data_type + self.loss\
+                             + str(self.num_epochs) + str(self.lr) + '.pkl'  # descriptive name from settings
+        else:
+            self.unet_path = self.model_type + self.data_type + self.loss + str(self.num_epochs)\
+                             + str(self.lr) + '.pkl' #descriptive name from settings
         self.num_col = None
         self.num_row = None
 
