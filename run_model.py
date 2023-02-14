@@ -1,4 +1,3 @@
-import os
 import cv2
 import numpy as np
 import torch
@@ -77,6 +76,9 @@ class Solver(object):
             self.unet = BigR2AttU_Net(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
         elif self.model_type == 'Vis':
             self.unet = R2AttU_Net_vis(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
+        elif self.model_type == 'TestNet':
+            self.unet = TestNet(img_ch=self.img_ch, output_ch=self.num_class)
+            self.valid(0)
 
 
         if self.loss == 'BCE':
@@ -171,17 +173,27 @@ class Solver(object):
             epoch += 1
 
     def window_recon(self, SR):
-        recon = np.zeros(((self.num_col + 1) * self.dim, (self.num_row + 1) * self.dim))
-        k = 0
         qdim = int(self.dim / 4)
         hdim = int(self.dim / 2)
+        recon = np.zeros(((self.num_col + 1) * hdim, (self.num_row + 1) * hdim))
+        k = 0
         for i in range(self.num_col):
             for j in range(self.num_row):
-                inner = SR[k][qdim:self.dim, qdim:self.dim]
+                inner = SR[k][qdim:3*qdim, qdim:3*qdim]
                 recon[i * hdim:(i + 1) * hdim, j * hdim:(j + 1) * hdim] = inner
                 k += 1
-        return recon
+        return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
 
+
+    def val_viewer(self, recon, GT):
+        recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
+        GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
+        plot = np.hstack((recons, GTs))
+        ratio = 0.05
+        plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
+        cv2.imshow('Reconstruction vs. GT', plot)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):
@@ -217,16 +229,20 @@ class Solver(object):
         SRs = np.concatenate([self.unet(batch.to(self.device)).detach().cpu().numpy() for batch in loop])
         SRs = np.transpose(SRs, axes=(0, 2, 3, 1))  # back to normal img format
 
-        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Evaluation'):
+        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Validation'):
             try:
                 single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
+                print(single_SR.shape)
                 recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
-                                        for i in range(len(self.val_GT_paths))], axis=3)
+                                        for i in range(self.num_class)], axis=2)
                 print(recon.shape)
-                GT = self.val_GT[i]
+                a, b, c = self.val_GT[i].shape
+                GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
                 print(GT.shape)
+                self.val_viewer(recon, GT)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(recon, GT)
+                print(_acc, _DC, _PC, _RE, _SP, _F1)
                 acc += _acc.item()
                 DC += _DC.item()
                 RE += _RE.item()

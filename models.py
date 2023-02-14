@@ -140,6 +140,17 @@ class Attention_block(nn.Module):
         return x * psi
 
 
+class TestNet(nn.Module):
+    def __init__(self, img_ch=3, output_ch=1):
+        super(TestNet, self).__init__()
+        self.out = nn.Sigmoid()
+        self.output_ch = output_ch
+
+    def forward(self, x):
+        x = self.out(x[:, :self.output_ch, :, :])
+        return x
+
+
 class U_Net(nn.Module):
     def __init__(self, img_ch=3, output_ch=1):
         super(U_Net, self).__init__()

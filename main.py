@@ -75,16 +75,16 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Model hyper-parameters
-    parser.add_argument('--image_size', type=int, default=1024)
+    parser.add_argument('--image_size', type=int, default=768)
     parser.add_argument('--t', type=int, default=3, help='Number of recurrent steps')
     parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
     parser.add_argument('--img_ch', type=int, default=3)
     parser.add_argument('--scheduler', type=str, default='cosine', help='None, exp, cosine')
-    parser.add_argument('--model_type', type=str, default='U_Net', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigR2AttU_Net')
+    parser.add_argument('--model_type', type=str, default='TestNet', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigR2AttU_Net')
 
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=10)
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.003)
     parser.add_argument('--beta1', type=float, default=0.5)  # momentum1 in Adam
     parser.add_argument('--beta2', type=float, default=0.999)  # momentum2 in Adam
