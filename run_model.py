@@ -201,7 +201,7 @@ class Solver(object):
                                                                                                  1], 1)
                                 for j in range(len(GTs[i]))], axis=0)
                 for i in range(len(GTs))], axis=3)
-            a, b, c, d, e, f = view_as_windows(GTs[0], (self.dim, self.dim, 3),
+            a, b, c, d, e, f = view_as_windows(np.array(cv2.imread(GTs[0][0], 2)), (self.dim, self.dim, 3),
                                                step=int(self.dim / 2)).shape
             self.num_col, self.num_row = a, b
 
