@@ -1,11 +1,42 @@
 #!/usr/bin/env python3
 import argparse
-import os
+import numpy as np
+import matplotlib.pyplot as plt
 from data_processing import training_processing, eval_processing
 from run_model import Solver
 from torch.backends import cudnn
 from evaluation import eval_solver
 
+
+def preview_crops(imgs, GTs, num_class=2):
+    #Displays training crops from dataloaders
+    rows = 1
+    columns = num_class + 1
+    #Back to normal image format
+    imgs = np.transpose(np.array(imgs), axes=(0, 2, 3, 1))
+    GTs = np.transpose(np.array(GTs), axes=(0, 2, 3, 1))
+    for i in range(len(imgs)):
+        fig = plt.figure(figsize=(10, 7))
+        fig.add_subplot(rows, columns, 1)
+        plt.imshow(imgs[i])
+        plt.axis('off')
+        plt.title('Img')
+        if num_class == 1:
+            fig.add_subplot(rows, columns, 2)
+            plt.imshow(GTs[i][:,:,0], cmap='gray')
+            plt.axis('off')
+            plt.title('GT')
+            plt.show()
+        else:
+            fig.add_subplot(rows, columns, 2)
+            plt.imshow(GTs[i][:, :, 0], cmap='gray')
+            plt.axis('off')
+            plt.title('GT')
+            fig.add_subplot(rows, columns, 3)
+            plt.imshow(GTs[i][:, :, 1], cmap='gray')
+            plt.axis('off')
+            plt.title('GT')
+            plt.show()
 
 def main(config):
     #Takes argpase config settings runs the model with them
@@ -31,6 +62,8 @@ def main(config):
         data_setup = training_processing(config)
         train_loader, valid_loader = data_setup.to_dataloader()
         print(len(train_loader), len(valid_loader))
+        #vis_imgs, vis_GTs = train_loader.dataset[:25]
+        #preview_crops(vis_imgs, vis_GTs, config.num_class)
         solver = Solver(config, train_loader, valid_loader)
 
     #Train utilizes random weights to train until stopping criteria of the number of epochs
@@ -42,7 +75,7 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     # Model hyper-parameters
-    parser.add_argument('--image_size', type=int, default=256)
+    parser.add_argument('--image_size', type=int, default=1024)
     parser.add_argument('--t', type=int, default=3, help='Number of recurrent steps')
     parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
     parser.add_argument('--img_ch', type=int, default=3)
