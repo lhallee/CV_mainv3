@@ -199,7 +199,7 @@ class Solver(object):
     def valid(self, epoch):
         GTs = []
         for i in range(self.num_class):
-            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*'))[:1])
+            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*')))
         if self.num_col is None:
             self.val_GT = np.concatenate([
                 np.concatenate([np.array(cv2.imread(GTs[i][j], 2), dtype=np.float32).reshape(1,
@@ -232,17 +232,13 @@ class Solver(object):
         for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Validation'):
             try:
                 single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
-                print(single_SR.shape)
                 recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
                                         for i in range(self.num_class)], axis=2)
-                print(recon.shape)
                 a, b, c = self.val_GT[i].shape
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
-                print(GT.shape)
                 self.val_viewer(recon, GT)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(recon, GT)
-                print(_acc, _DC, _PC, _RE, _SP, _F1)
                 acc += _acc.item()
                 DC += _DC.item()
                 RE += _RE.item()
