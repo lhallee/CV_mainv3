@@ -1,8 +1,10 @@
+import argparse
 import numpy as np
 import os
 import torch
 import torchvision
 import cv2
+import matplotlib.pyplot as plt
 from natsort import natsorted
 from torch.utils import data
 from skimage.util import view_as_windows
@@ -94,11 +96,11 @@ class training_processing:
         return imgs
 
     def to_dataloader(self):
-        train_img_paths = natsorted(glob(self.train_img_path + '*')) # natural sort
-        val_img_paths = natsorted(glob(self.val_img_path + '*'))
+        train_img_paths = natsorted(glob(self.train_img_path + '*')[:1]) # natural sort
+        val_img_paths = natsorted(glob(self.val_img_path + '*')[:1])
         GTs = []
         for i in range(self.num_class):
-            GTs.append(natsorted(glob(self.GT_paths[i] + '*')))
+            GTs.append(natsorted(glob(self.GT_paths[i] + '*'))[:1])
 
         assert len(train_img_paths) * self.num_class == sum([len(GTs[i]) for i in range(len(GTs))]),\
             'Need GT for every Image.'
@@ -197,4 +199,78 @@ class eval_processing:
             print('Wrong eval type, try again.')
             return None
 
+def preview_crops(imgs, GTs, num_class=2):
+    #Displays training crops from dataloaders
+    rows = 1
+    columns = num_class + 1
+    #Back to normal image format
+    imgs = np.transpose(np.array(imgs), axes=(0, 2, 3, 1))
+    GTs = np.transpose(np.array(GTs), axes=(0, 2, 3, 1))
+    for i in range(len(imgs)):
+        fig = plt.figure(figsize=(10, 7))
+        fig.add_subplot(rows, columns, 1)
+        plt.imshow(imgs[i])
+        plt.axis('off')
+        plt.title('Img')
+        if num_class == 1:
+            fig.add_subplot(rows, columns, 2)
+            plt.imshow(GTs[i][:,:,0], cmap='gray')
+            plt.axis('off')
+            plt.title('GT')
+            plt.show()
+        else:
+            fig.add_subplot(rows, columns, 2)
+            plt.imshow(GTs[i][:, :, 0], cmap='gray')
+            plt.axis('off')
+            plt.title('GT')
+            fig.add_subplot(rows, columns, 3)
+            plt.imshow(GTs[i][:, :, 1], cmap='gray')
+            plt.axis('off')
+            plt.title('GT')
+            plt.show()
 
+def main(config):
+    if config.mode == 'eval':
+        print('Eval')
+        #eval mode is for evaluating the 3D reconstruction capabilities of a model
+        #data_setup = eval_processing(config)
+        #eval_loader, num_col, num_row = data_setup.eval_dataloader()
+        #dataloader of eval data, number of columns in window split, number of rows in window split
+        #solver = eval_solver(config, eval_loader, num_col, num_row)
+        #solver.eval()
+
+    #Can choose between real data in a path or generated data of squares of various sizes
+    elif config.mode == 'train':
+        data_setup = training_processing(config)
+        train_loader, valid_loader = data_setup.to_dataloader()
+        print(len(train_loader), len(valid_loader))
+        vis_imgs, vis_GTs = train_loader.dataset[:10]
+        preview_crops(vis_imgs, vis_GTs, config.num_class)
+        torch.save(train_loader, config.save_path + 'train_dataloader.pth')
+        torch.save(valid_loader, config.save_path + 'valid_dataloader.pth')
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    # Model hyper-parameters
+    parser.add_argument('--image_size', type=int, default=256)
+    parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
+
+    # Training hyper-parameters
+    parser.add_argument('--batch_size', type=int, default=1)
+
+    # Paths
+    parser.add_argument('--train_img_path', type=str, default='./img_data/train_img/',
+                        help='Path for training images')
+    parser.add_argument('--val_img_path', type=str, default='./img_data/val_img/',
+                        help='Path for validation images')
+    parser.add_argument('--GT_paths', type=list, default=['./img_data/GT_1/', './img_data/GT_2/'],
+                        help='List of paths for training GT (one for each class)')
+    parser.add_argument('--eval_img_path', type=str, default='./img_data/eval_img/',
+                        help='Images for 2D reconstruction evaluation')
+    parser.add_argument('--save_path', type=str, default='./dataloaders/')
+
+
+    # misc
+    parser.add_argument('--mode', type=str, default='train', help='train, eval, CV')
+    config = parser.parse_args()
+    main(config)

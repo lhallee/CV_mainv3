@@ -1,46 +1,37 @@
 #!/usr/bin/env python3
 import argparse
-import numpy as np
-import matplotlib.pyplot as plt
-from data_processing import training_processing, eval_processing
+import torch
+from torch.utils import data
 from trainer import Trainer
 from torch.backends import cudnn
 #from evaluation import eval_solver
 
+class ImageSet(data.Dataset):
+    # Custom pytorch dataset, simply indexes imgs and gts
+    def __init__(self, imgs, GTs):
+        self.imgs = imgs
+        self.GTs = GTs
+    def __len__(self):
+        return len(self.imgs)
+    def __getitem__(self, index):
+        img = torch.tensor(self.imgs[index], dtype=torch.float)
+        GT = torch.tensor(self.GTs[index], dtype=torch.float)
+        return img, GT
 
-def preview_crops(imgs, GTs, num_class=2):
-    #Displays training crops from dataloaders
-    rows = 1
-    columns = num_class + 1
-    #Back to normal image format
-    imgs = np.transpose(np.array(imgs), axes=(0, 2, 3, 1))
-    GTs = np.transpose(np.array(GTs), axes=(0, 2, 3, 1))
-    for i in range(len(imgs)):
-        fig = plt.figure(figsize=(10, 7))
-        fig.add_subplot(rows, columns, 1)
-        plt.imshow(imgs[i])
-        plt.axis('off')
-        plt.title('Img')
-        if num_class == 1:
-            fig.add_subplot(rows, columns, 2)
-            plt.imshow(GTs[i][:,:,0], cmap='gray')
-            plt.axis('off')
-            plt.title('GT')
-            plt.show()
-        else:
-            fig.add_subplot(rows, columns, 2)
-            plt.imshow(GTs[i][:, :, 0], cmap='gray')
-            plt.axis('off')
-            plt.title('GT')
-            fig.add_subplot(rows, columns, 3)
-            plt.imshow(GTs[i][:, :, 1], cmap='gray')
-            plt.axis('off')
-            plt.title('GT')
-            plt.show()
+
+class ReconSet(data.Dataset):
+    # Custom pytorch dataset, simply indexes imgs
+    def __init__(self, imgs):
+        self.imgs = imgs
+    def __len__(self):
+        return len(self.imgs)
+    def __getitem__(self, index):
+        img = torch.tensor(self.imgs[index], dtype=torch.float)
+        return img
+
 
 def main(config):
     #Takes argpase config settings runs the model with them
-    config.output_ch = config.num_class
     cudnn.benchmark = True
 
     #print(config)
@@ -49,26 +40,13 @@ def main(config):
         solver = cross_validator(config)
         solver.run()
 
-    if config.mode == 'eval':
-        #eval mode is for evaluating the 3D reconstruction capabilities of a model
-        #data_setup = eval_processing(config)
-        #eval_loader, num_col, num_row = data_setup.eval_dataloader()
-        #dataloader of eval data, number of columns in window split, number of rows in window split
-        #solver = eval_solver(config, eval_loader, num_col, num_row)
-        #solver.eval()
-
-    #Can choose between real data in a path or generated data of squares of various sizes
-    if config.data_type == 'Real':
-        data_setup = training_processing(config)
-        train_loader, valid_loader = data_setup.to_dataloader()
-        print(len(train_loader), len(valid_loader))
-        #vis_imgs, vis_GTs = train_loader.dataset[:25]
-        #preview_crops(vis_imgs, vis_GTs, config.num_class)
-        solver = Trainer(config, train_loader, valid_loader)
-
     #Train utilizes random weights to train until stopping criteria of the number of epochs
     #then calls the test function
     if config.mode == 'train':
+        train_loader = torch.load(config.train_loader_path)
+        valid_loader = torch.load(config.valid_loader_path)
+        print(len(train_loader), len(valid_loader))
+        solver = Trainer(config, train_loader, valid_loader)
         solver.train()
 
 
@@ -93,17 +71,11 @@ if __name__ == '__main__':
 
     # Paths
     parser.add_argument('--model_path', type=str, default='None', help='Path for model weights')
-    parser.add_argument('--train_img_path', type=str, default='./img_data/train_img/',
-                        help='Path for training images')
-    parser.add_argument('--val_img_path', type=str, default='./img_data/val_img/',
-                        help='Path for validation images')
+    parser.add_argument('--result_path', type=str, default='./result/', help='Path for results')
+    parser.add_argument('--train_loader_path', type=str, default='./dataloaders/train_dataloader.pth')
+    parser.add_argument('--valid_loader_path', type=str, default='./dataloaders/valid_dataloader.pth')
     parser.add_argument('--val_GT_paths', type=list, default=['./img_data/val_GT_1/', './img_data/val_GT_2/'],
                         help='Path for validation GT')
-    parser.add_argument('--GT_paths', type=list, default=['./img_data/GT_1/', './img_data/GT_2/'],
-                        help='List of paths for training GT (one for each class)')
-    parser.add_argument('--eval_img_path', type=str, default='./img_data/eval_img/',
-                        help='Images for 2D reconstruction evaluation')
-    parser.add_argument('--result_path', type=str, default='./result/', help='Path for results')
 
     # misc
     parser.add_argument('--mode', type=str, default='train', help='train, eval, CV')
