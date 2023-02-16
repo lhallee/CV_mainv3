@@ -3,9 +3,9 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 from data_processing import training_processing, eval_processing
-from run_model import Solver
+from trainer import Trainer
 from torch.backends import cudnn
-from evaluation import eval_solver
+#from evaluation import eval_solver
 
 
 def preview_crops(imgs, GTs, num_class=2):
@@ -43,7 +43,7 @@ def main(config):
     config.output_ch = config.num_class
     cudnn.benchmark = True
 
-    print(config)
+    #print(config)
     if config.mode == 'CV':
         from cross_validation import cross_validator
         solver = cross_validator(config)
@@ -51,11 +51,11 @@ def main(config):
 
     if config.mode == 'eval':
         #eval mode is for evaluating the 3D reconstruction capabilities of a model
-        data_setup = eval_processing(config)
-        eval_loader, num_col, num_row = data_setup.eval_dataloader()
+        #data_setup = eval_processing(config)
+        #eval_loader, num_col, num_row = data_setup.eval_dataloader()
         #dataloader of eval data, number of columns in window split, number of rows in window split
-        solver = eval_solver(config, eval_loader, num_col, num_row)
-        solver.eval()
+        #solver = eval_solver(config, eval_loader, num_col, num_row)
+        #solver.eval()
 
     #Can choose between real data in a path or generated data of squares of various sizes
     if config.data_type == 'Real':
@@ -64,7 +64,7 @@ def main(config):
         print(len(train_loader), len(valid_loader))
         #vis_imgs, vis_GTs = train_loader.dataset[:25]
         #preview_crops(vis_imgs, vis_GTs, config.num_class)
-        solver = Solver(config, train_loader, valid_loader)
+        solver = Trainer(config, train_loader, valid_loader)
 
     #Train utilizes random weights to train until stopping criteria of the number of epochs
     #then calls the test function

@@ -7,7 +7,7 @@ from skimage.util import view_as_windows
 from tqdm import tqdm
 from glob import glob
 from sklearn.model_selection import train_test_split, GridSearchCV
-from custom_model_components import *
+from model_parts import *
 
 
 from models import *
