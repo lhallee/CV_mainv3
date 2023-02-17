@@ -42,7 +42,10 @@ class training_processing:
         self.dim = config.image_size
         self.num_class = config.num_class
         self.batch_size = config.batch_size
-        self.num_cpu = os.cpu_count()
+        if os.cpu_count() > 4:
+            self.num_cpu = int(os.cpu_count() / 4)
+        else:
+            self.num_put = 1
 
     def crop_augment_GTs(self, GT):
         GTs = view_as_windows(GT, (self.dim, self.dim, self.num_class), step=self.dim)
