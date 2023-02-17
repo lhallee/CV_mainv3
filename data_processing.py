@@ -45,7 +45,7 @@ class training_processing:
         if os.cpu_count() > 4:
             self.num_cpu = int(os.cpu_count() / 4)
         else:
-            self.num_put = 1
+            self.num_cpu = 1
 
     def crop_augment_GTs(self, GT):
         GTs = view_as_windows(GT, (self.dim, self.dim, self.num_class), step=self.dim)
@@ -248,8 +248,8 @@ def main(config):
         print(len(train_loader), len(valid_loader))
         vis_imgs, vis_GTs = train_loader.dataset[:10]
         preview_crops(vis_imgs, vis_GTs, config.num_class)
-        torch.save(train_loader, config.save_path + 'train_dataloader.pth')
-        torch.save(valid_loader, config.save_path + 'valid_dataloader.pth')
+        torch.save(train_loader, config.save_path + 'train_dataloader.pth', pickle_protocol=4)
+        torch.save(valid_loader, config.save_path + 'valid_dataloader.pth', pickle_protocol=4)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
