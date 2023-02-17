@@ -38,7 +38,6 @@ class training_processing:
     def __init__(self, config):
         self.train_img_path = config.train_img_path
         self.val_img_path = config.val_img_path
-        self.val_GT_path = config.val_GT_paths
         self.GT_paths = config.GT_paths
         self.dim = config.image_size
         self.num_class = config.num_class
@@ -96,11 +95,11 @@ class training_processing:
         return imgs
 
     def to_dataloader(self):
-        train_img_paths = natsorted(glob(self.train_img_path + '*')[:1]) # natural sort
-        val_img_paths = natsorted(glob(self.val_img_path + '*')[:1])
+        train_img_paths = natsorted(glob(self.train_img_path + '*')) # natural sort
+        val_img_paths = natsorted(glob(self.val_img_path + '*'))
         GTs = []
         for i in range(self.num_class):
-            GTs.append(natsorted(glob(self.GT_paths[i] + '*'))[:1])
+            GTs.append(natsorted(glob(self.GT_paths[i] + '*')))
 
         assert len(train_img_paths) * self.num_class == sum([len(GTs[i]) for i in range(len(GTs))]),\
             'Need GT for every Image.'
