@@ -14,10 +14,11 @@ class interp_3d(object):
 		#paths
 		self.save_path = config.save_path
 		self.rotate = config.rotate
-		self.img_paths = natsorted(glob(config.img_path + '*.png')[28:30])
 		self.s = config.scale
 		self.d = config.density
 		self.type = config.type
+		self.view = config.view
+		self.img_paths = natsorted(glob(config.img_path + '*.png'))
 
 	def run_interp(self):
 		h, w = np.array(cv2.imread(self.img_paths[0], 2)).shape
@@ -62,10 +63,12 @@ class interp_3d(object):
 		pcd = open3d.geometry.PointCloud()
 		pcd.points = open3d.utility.Vector3dVector(points)
 		pcd.colors = open3d.utility.Vector3dVector(colors)
-		if self.rotate:
-			open3d.visualization.draw_geometries_with_animation_callback([pcd], self.rotate_view)
-		else:
-			open3d.visualization.draw_geometries([pcd])
+		open3d.io.write_point_cloud(self.save_path+str(self.s)+'_'+str(self.d)+str(self.type)+'point_cloud.ply', pcd)
+		if self.view:
+			if self.rotate:
+				open3d.visualization.draw_geometries_with_animation_callback([pcd], self.rotate_view)
+			else:
+				open3d.visualization.draw_geometries([pcd])
 
 	def plot4d(self, data, X, Y, z_scaled):
 		# V3D = V.reshape(int((X-1)/c), int((Y-1)/c), int(sZ/c))
@@ -94,12 +97,13 @@ class interp_3d(object):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	# Model hyper-parameters
-	parser.add_argument('--img_path', type=str, default='C:/Users/Logan Hallee/Desktop/1_26_result/result/')
+	parser.add_argument('--img_path', type=str, default='C:/Users/Logan Hallee/Desktop/1_26_preds/')
 	parser.add_argument('--save_path', type=str, default='./result/')
 	parser.add_argument('--scale', type=float, default=0.01)
-	parser.add_argument('--density', type=float, default=0.1)
+	parser.add_argument('--density', type=float, default=1)
 	parser.add_argument('--rotate', type=bool, default=False)
 	parser.add_argument('--type', type=str, default='hev')
+	parser.add_argument('--view', type=bool, default=True)
 	config = parser.parse_args()
 	main = interp_3d(config)
 	main.run_interp()
