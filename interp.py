@@ -2,7 +2,6 @@ import numpy as np
 import cv2
 import scipy
 import matplotlib.pyplot as plt
-import open3d
 import argparse
 from natsort import natsorted
 from glob import glob
@@ -11,16 +10,28 @@ from tqdm import tqdm
 
 class interp_3d(object):
 	def __init__(self, config):
-		#paths
+		# Paths
 		self.save_path = config.save_path
-		self.rotate = config.rotate
-		self.s = config.scale
-		self.d = config.density
-		self.type = config.type
-		self.view = config.view
+		self.points_path = config.points_path
+		self.colors_path = config.colors_path
 		self.img_paths = natsorted(glob(config.img_path + '*.png'))
 
-	def run_interp(self):
+		# Options
+		self.rotate = config.rotate
+		self.type = config.type
+		self.mode = config.mode
+
+		# Parameters
+		self.s = config.scale
+		self.d = config.density
+		self.alpha = config.alpha
+
+		if self.mode == 'save_npys':
+			self.gen_points()
+		elif self.mode == 'open_mesh' or 'open_vis' or 'open_ply':
+			self.open_point_cloud()
+
+	def gen_points(self):
 		h, w = np.array(cv2.imread(self.img_paths[0], 2)).shape
 		h, w = int(h * self.s), int(w / 2 * self.s)
 		if self.type == 'hev':
@@ -41,8 +52,7 @@ class interp_3d(object):
 		interpolation = scipy.interpolate.RegularGridInterpolator(grid, preds)
 		print('Sparse Interpolation done')
 		sZ = (Z - 1) * z_scale
-		zF = int(Z / self.d)
-		print(X, Y, sZ, zF)
+		zF = (Z - 1) / self.d
 		interp_arr = np.mgrid[0:X - 1:self.d, 0:Y - 1:self.d, 0:sZ:(sZ/zF)].\
 			reshape(3, int(((X - 1) / self.d) * ((Y - 1) / self.d) * zF)).T
 		interp_grid = interp_arr.tolist()
@@ -60,15 +70,34 @@ class interp_3d(object):
 
 		points = np.delete(points, deletes, axis=0)
 		colors = np.delete(colors, deletes, axis=0)
+		np.save(self.save_path + 'points.npy', points)
+		np.save(self.save_path + 'colors.npy', colors)
+
+	def open_point_cloud(self):
+		import open3d
+		points = np.load(self.points_path)
+		colors = np.load(self.colors_path)
 		pcd = open3d.geometry.PointCloud()
 		pcd.points = open3d.utility.Vector3dVector(points)
 		pcd.colors = open3d.utility.Vector3dVector(colors)
-		open3d.io.write_point_cloud(self.save_path+str(self.s)+'_'+str(self.d)+str(self.type)+'point_cloud.ply', pcd)
-		if self.view:
+
+		if self.mode == 'open_vis':
 			if self.rotate:
 				open3d.visualization.draw_geometries_with_animation_callback([pcd], self.rotate_view)
 			else:
 				open3d.visualization.draw_geometries([pcd])
+
+		elif self.mode == 'open_mesh':
+			mesh = open3d.geometry.TriangleMesh.create_from_point_cloud_alpha_shape(pcd, self.alpha)
+			mesh.compute_vertex_normals()
+			if self.rotate:
+				open3d.visualization.draw_geometries_with_animation_callback([mesh], self.rotate_view, mesh_show_back_face=True)
+			else:
+				open3d.visualization.draw_geometries([mesh], mesh_show_back_face=True)
+
+		elif self.mode == 'open_ply':
+			open3d.io.write_point_cloud(
+				self.save_path + str(self.s) + '_' + str(self.d) + str(self.type) + 'point_cloud.ply', pcd)
 
 	def plot4d(self, data, X, Y, z_scaled):
 		# V3D = V.reshape(int((X-1)/c), int((Y-1)/c), int(sZ/c))
@@ -96,17 +125,24 @@ class interp_3d(object):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-	# Model hyper-parameters
+	# Paths
 	parser.add_argument('--img_path', type=str, default='C:/Users/Logan Hallee/Desktop/1_26_preds/')
 	parser.add_argument('--save_path', type=str, default='./result/')
+	parser.add_argument('--points_path', type=str, default='./result/points.npy')
+	parser.add_argument('--colors_path', type=str, default='./result/colors.npy')
+
+	# Options
+	parser.add_argument('--rotate', type=bool, default=True)
+	parser.add_argument('--type', type=str, default='lob')
+	parser.add_argument('--mode', type=str, default='open_vis', help='Which task to perform: save_npys, open_mesh, open_vis, open_ply')
+
+	# Parameters
 	parser.add_argument('--scale', type=float, default=0.01)
-	parser.add_argument('--density', type=float, default=1)
-	parser.add_argument('--rotate', type=bool, default=False)
-	parser.add_argument('--type', type=str, default='hev')
-	parser.add_argument('--view', type=bool, default=True)
+	parser.add_argument('--density', type=float, default=0.2)
+	parser.add_argument('--alpha', type=float, default=0.5)
+
 	config = parser.parse_args()
-	main = interp_3d(config)
-	main.run_interp()
+	interp_3d(config)
 
 
 
