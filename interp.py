@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import scipy.interpolate
+import scipy.interpolate as erp
 import matplotlib.pyplot as plt
 import argparse
 from natsort import natsorted
@@ -49,7 +49,7 @@ class interp_3d(object):
 		grid_z = np.arange(0, Z, 1) * z_scale
 		grid = (grid_x, grid_y, grid_z)
 		print('Sparse grid done')
-		interpolation = scipy.interpolate.RegularGridInterpolator(grid, preds)
+		interpolation = erp.RegularGridInterpolator(grid, preds)
 		print('Sparse Interpolation done')
 		sZ = (Z - 1) * z_scale
 		zF = (Z - 1) / self.d
