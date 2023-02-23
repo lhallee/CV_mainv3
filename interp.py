@@ -1,6 +1,6 @@
 import numpy as np
 import cv2
-import scipy
+import scipy.interpolate
 import matplotlib.pyplot as plt
 import argparse
 from natsort import natsorted
