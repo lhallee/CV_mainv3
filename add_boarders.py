@@ -7,10 +7,11 @@ from glob import glob
 
 #For making all imgs and GT images the same size with black boarders
 
-file_path = './training_IMG_GT_1_23/'
-save_path = './1_23_squared_results/'
-img_paths = natsorted(glob(file_path + '*.png'))
-GT_paths = natsorted(glob(file_path + '*.tif'))
+img_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/imgs/'
+GT_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/Ground Truth/'
+save_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/Squared/'
+img_paths = natsorted(glob(img_path + '*.png'))
+GT_paths = natsorted(glob(GT_path + '*.tif'))
 max_H = 0
 max_W = 0
 dim = 0

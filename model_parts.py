@@ -9,8 +9,8 @@ from collections import defaultdict
 def _calculate_overlap_metrics(pred, gt):
     #Calculates various metrics for image segmentation models
     eps = 1e-6
-    output = torch.tensor(pred, dtype=torch.float32).flatten()
-    target = torch.tensor(gt, dtype=torch.float32).flatten()
+    output = pred.clone().detach().flatten()
+    target = gt.clone().detach().flatten()
     tp = torch.sum(output * target)  # TP
     fp = torch.sum(output * (1 - target))  # FP
     fn = torch.sum((1 - output) * target)  # FN

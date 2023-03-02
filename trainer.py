@@ -9,20 +9,58 @@ from natsort import natsorted
 from glob import glob
 from skimage.util import view_as_windows
 
+class ImageSet(torch.utils.data.Dataset):
+    # Custom pytorch dataset, simply indexes imgs and gts
+    def __init__(self, imgs, GTs):
+        self.imgs = imgs
+        self.GTs = GTs
+    def __len__(self):
+        return len(self.imgs)
+    def __getitem__(self, index):
+        img = torch.tensor(self.imgs[index], dtype=torch.float)
+        GT = torch.tensor(self.GTs[index], dtype=torch.float)
+        return img, GT
+
+
+class ValidSet(torch.utils.data.Dataset):
+    # Custom pytorch dataset, simply indexes imgs
+    def __init__(self, imgs):
+        self.imgs = imgs
+    def __len__(self):
+        return len(self.imgs)
+    def __getitem__(self, index):
+        img = torch.tensor(self.imgs[index], dtype=torch.float)
+        return img
 
 class Trainer(object):
     def __init__(self, config, train_loader, valid_loader):
-        #Dataloaders
-        self.train_loader = train_loader
-        self.valid_loader = valid_loader
+        # Device
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        if torch.cuda.is_available():
+            torch.cuda.set_device(self.device)
 
-        #Model
+        # Training settings
+        self.num_epochs = config.num_epochs
+        self.batch_size = config.batch_size
+        self.best_unet_score = 0
+        self.stop = config.stop
+
+        # Dataloaders
+        train_img_data = np.load(config.train_img_path)
+        train_GT_data = np.load(config.train_GT_path)
+        valid_img_data = np.load(config.val_img_path)
+        train_ds = ImageSet(train_img_data, train_GT_data)
+        valid_ds = ValidSet(valid_img_data)
+        self.train_loader = torch.utils.data.DataLoader(train_ds, num_workers=0, batch_size=config.batch_size, shuffle=True)
+        self.valid_loader = torch.utils.data.DataLoader(valid_ds, num_workers=0, batch_size=config.batch_size, shuffle=False)
+
+        # Model
         self.model_type = config.model_type
         self.t = config.t
         self.unet = None
-        self.best_unet = None #might not need
+        self.best_unet = None  # might not need
         self.optimizer = None
-        self.best_epoch = None #might not need
+        self.best_epoch = None  # might not need
         self.criterion = None
         self.loss = config.loss
         self.img_ch = config.img_ch
@@ -31,26 +69,18 @@ class Trainer(object):
         self.scheduler = config.scheduler
         self.dim = config.image_size
 
-        #Hyper-parameters
+        # Hyper-parameters
         self.lr = config.lr
         self.beta1 = config.beta1
         self.beta2 = config.beta2
 
-        #Training settings
-        self.num_epochs = config.num_epochs
-        self.batch_size = config.batch_size
-        self.best_unet_score = 0
-        self.stop = config.stop
-        self.multi_losses = config.multi_loss
-
-        #Paths
+        # Paths
         self.model_path = config.model_path
         self.result_path = config.result_path
         self.val_GT_paths = config.val_GT_paths
         self.save_path = None
 
-        #MISC
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        # MISC
         self.num_col = None
         self.num_row = None
 
@@ -75,7 +105,7 @@ class Trainer(object):
 
         if self.loss == 'BCE':
             self.criterion = nn.BCELoss()
-        elif self.loss == 'DiceBCE':
+        elif self.loss == 'DiceCE':
             self.criterion = DiceBCELoss()
         elif self.loss == 'IOU':
             self.criterion = IoULoss()
@@ -230,7 +260,7 @@ class Trainer(object):
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
                 self.val_viewer(recon, GT)
                 # Calculate metrics
-                _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(recon, GT)
+                _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()
                 DC += _DC.item()
                 RE += _RE.item()
