@@ -2,7 +2,7 @@ import cv2
 import monai.losses
 import numpy as np
 import torch
-from monai.data import ThreadDataLoader, SmartCacheDataset, CacheDataset
+from monai.data import ThreadDataLoader
 from tqdm import tqdm
 from natsort import natsorted
 from glob import glob
@@ -112,7 +112,7 @@ class Trainer(object):
                                                    max_iters=len(self.train_loader) * self.num_epochs)
 
         self.unet.to(self.device)
-        self.print_network(self.unet, self.model_type)
+        #self.print_network(self.unet, self.model_type)
 
     def print_network(self, model, name):
         """Print out the network information."""
@@ -152,7 +152,7 @@ class Trainer(object):
                 scaler.scale(loss).backward()
                 scaler.step(self.optimizer)
                 if self.scheduler is not None:
-                    scaler.step(self.scheduler)
+                    self.scheduler.step()
                 scaler.update()
                 #calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(SR.detach().cpu(), GT.detach().cpu())
