@@ -257,7 +257,8 @@ class Trainer(object):
                                         for i in range(self.num_class)], axis=2)
                 a, b, c = self.val_GT[i].shape
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
-                self.val_viewer(recon, GT)
+                print(recon.shape, GT.shape)
+                #self.val_viewer(recon, GT)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()

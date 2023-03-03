@@ -34,7 +34,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
     parser.add_argument('--img_ch', type=int, default=3)
     parser.add_argument('--scheduler', type=str, default='cosine', help='None, exp, cosine')
-    parser.add_argument('--model_type', type=str, default='TestNet', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigNET')
+    parser.add_argument('--model_type', type=str, default='R2AttU_Net', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigNET')
 
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=10)
@@ -50,6 +50,8 @@ if __name__ == '__main__':
     parser.add_argument('--train_img_path', type=str, default='./tiny_data/train_img_data.npy')
     parser.add_argument('--train_GT_path', type=str, default='./tiny_data/train_GT_data.npy')
     parser.add_argument('--val_img_path', type=str, default='./tiny_data/val_img_data.npy')
+
+    #parser.add_argument('--val_GT_paths', type=list, default=['./img_data/val_GT_1/', './img_data/val_GT_2/'])
     parser.add_argument('-ap', '--val_GT_paths', action='append', help='<Required> Set flag', required=True)
 
 
