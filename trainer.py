@@ -151,17 +151,7 @@ class Trainer(object):
                 images = images.to(self.device)
                 GT = GT.to(self.device)
                 SR = self.unet(images) #SR : Segmentation Result
-                if self.multi_losses:
-                    loss_hev = self.criterion(SR[:,:,1], GT[:,:,1])
-                    loss_lob = self.criterion(SR[:,:,0], GT[:,:,0])
-                    smooth = 1
-                    if loss_lob > loss_hev:
-                        ratio = (loss_lob + smooth) / (loss_hev + smooth)
-                    else:
-                        ratio = (loss_hev + smooth) / (loss_lob + smooth)
-                    loss = (loss_hev + loss_lob) * ratio / 2
-                else:
-                    loss = self.criterion(SR, GT)
+                loss = self.criterion(SR, GT)
                 epoch_loss += loss.item()
                 #Backprop + optimize
                 self.optimizer.zero_grad()
