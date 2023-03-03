@@ -36,8 +36,6 @@ class Trainer(object):
     def __init__(self, config):
         #Device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if torch.cuda.is_available():
-            torch.cuda.set_device(self.device)
 
         # Training settings
         self.num_epochs = config.num_epochs

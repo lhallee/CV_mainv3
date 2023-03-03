@@ -36,8 +36,6 @@ class Trainer(object):
     def __init__(self, config, train_loader, valid_loader):
         # Device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        if torch.cuda.is_available():
-            torch.cuda.set_device(self.device)
 
         # Training settings
         self.num_epochs = config.num_epochs
@@ -101,7 +99,6 @@ class Trainer(object):
         elif self.model_type == 'TestNet':
             self.unet = TestNet(img_ch=self.img_ch, output_ch=self.num_class)
             self.valid(0)
-
 
         if self.loss == 'BCE':
             self.criterion = nn.BCELoss()
