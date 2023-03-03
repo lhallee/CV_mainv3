@@ -33,7 +33,7 @@ class ValidSet(torch.utils.data.Dataset):
         return img
 
 class Trainer(object):
-    def __init__(self, config, train_loader, valid_loader):
+    def __init__(self, config):
         # Device
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
