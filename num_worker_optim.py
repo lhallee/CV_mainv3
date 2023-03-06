@@ -3,8 +3,9 @@ import argparse
 import monai
 import torch
 import numpy as np
-from torch.utils.data import DataLoader
-from monai.data import ThreadDataLoader
+from torch.utils.data import DataLoader as TDL
+from monai.data import DataLoader as MDL
+from monai.data import SmartCacheDataset
 from time import time
 
 
@@ -40,14 +41,14 @@ class TorchSet(torch.utils.data.Dataset):
 
 def worker_optimizer(config):
 	print('Loading Data')
-	train_img_data = np.load(config.train_img_path, allow_pickle=True)
-	train_GT_data = np.load(config.train_GT_path, allow_pickle=True)
-	monai_ds = MonaiSet(train_img_data, train_GT_data)
+	train_img_data = np.array(np.load(config.train_img_path, allow_pickle=True))
+	train_GT_data = np.array(np.load(config.train_GT_path, allow_pickle=True))
+	monai_ds = SmartCacheDataset(train_img_data, train_GT_data)
 	torch_ds = TorchSet(train_img_data, train_GT_data)
 	print('Dataset compiled')
 
 	for num_workers in range(2, config.cpu_count, 2):
-		monai_loader = ThreadDataLoader(monai_ds, num_workers=num_workers, batch_size=config.batch_size, shuffle=True)
+		monai_loader = MDL(monai_ds, num_workers=num_workers, batch_size=config.batch_size, shuffle=True)
 		start_monai = time()
 		for epoch in range(1, 3):
 			for i, data in enumerate(monai_loader, 0):
@@ -56,7 +57,7 @@ def worker_optimizer(config):
 		print("Monai finish with:{} second, num_workers={}".format(end_monai - start_monai, num_workers))
 
 	for num_workers in range(2, config.cpu_count, 2):
-		torch_loader = DataLoader(torch_ds, num_workers=num_workers, batch_size=config.batch_size, shuffle=True)
+		torch_loader = TDL(torch_ds, num_workers=num_workers, batch_size=config.batch_size, shuffle=True)
 		start_torch = time()
 		for epoch in range(1, 3):
 			for i, data in enumerate(torch_loader, 0):

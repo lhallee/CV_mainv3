@@ -1,16 +1,17 @@
 import cv2
-import monai.losses
 import numpy as np
 import torch
-from monai.data import ThreadDataLoader
+from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from natsort import natsorted
 from glob import glob
 from skimage.util import view_as_windows
+from monai.losses import DiceCELoss
 from models import *
 from model_parts import CosineWarmupScheduler, _calculate_overlap_metrics
 
-class ImageSet(monai.data.Dataset):
+
+class ImageSet(Dataset):
     # Custom pytorch dataset, simply indexes imgs and gts
     def __init__(self, imgs, GTs):
         self.imgs = imgs
@@ -22,7 +23,8 @@ class ImageSet(monai.data.Dataset):
         GT = torch.tensor(self.GTs[index], dtype=torch.float)
         return img, GT
 
-class ValidSet(monai.data.Dataset):
+
+class ValidSet(Dataset):
     # Custom pytorch dataset, simply indexes imgs
     def __init__(self, imgs):
         self.imgs = imgs
@@ -31,6 +33,7 @@ class ValidSet(monai.data.Dataset):
     def __getitem__(self, index):
         img = torch.tensor(self.imgs[index], dtype=torch.float)
         return img
+
 
 class Trainer(object):
     def __init__(self, config):
@@ -50,9 +53,9 @@ class Trainer(object):
         valid_img_data = np.load(config.val_img_path, allow_pickle=True)
         train_ds = ImageSet(train_img_data, train_GT_data)
         valid_ds = ValidSet(valid_img_data)
-        self.train_loader = ThreadDataLoader(train_ds, num_workers=config.num_workers,
+        self.train_loader = DataLoader(train_ds, num_workers=config.num_workers,
                                              batch_size=config.batch_size, shuffle=True)
-        self.valid_loader = ThreadDataLoader(valid_ds, num_workers=config.num_workers,
+        self.valid_loader = DataLoader(valid_ds, num_workers=config.num_workers,
                                              batch_size=config.batch_size, shuffle=False)
         print('Dataloaders compiled')
 
@@ -106,7 +109,7 @@ class Trainer(object):
             self.valid(0)
 
         if self.loss == 'DiceCE':
-            self.criterion = monai.losses.DiceCELoss(sigmoid=False).to(self.device)
+            self.criterion = DiceCELoss(sigmoid=False).to(self.device)
 
 
         self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr, (self.beta1, self.beta2))
@@ -253,9 +256,6 @@ class Trainer(object):
                                         for i in range(self.num_class)], axis=2)
                 a, b, c = self.val_GT[i].shape
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
-                print(recon.shape, GT.shape)
-                if self.viewer:
-                    self.val_viewer(recon, GT, epoch)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()
@@ -281,6 +281,8 @@ class Trainer(object):
         #Save Best U-Net model
         #Only saved when validation metrics are improved on average
         if unet_score > self.best_unet_score:
+            if self.viewer:
+                self.val_viewer(recon, GT, epoch)
             self.best_unet_score = unet_score
             self.best_epoch = epoch
             if self.model_path != 'None':

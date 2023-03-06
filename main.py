@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-from monai_trainer_single import Trainer as monaisingleTrainer
+from trainer_single import Trainer as singleTrainer
 from monai_trainer_multi import Trainer as monaimultiTrainer
-from trainer import Trainer as regTrainer
 from torch.backends import cudnn
 #from evaluation import eval_solver
 
@@ -22,7 +21,7 @@ def main(config):
         if config.multi:
             solver = monaimultiTrainer(config)
         else:
-            solver = monaisingleTrainer(config)
+            solver = singleTrainer(config)
         solver.train()
 
 
@@ -61,7 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('--stop', type=float, default=0.975, help='Minimum stopping criteria for unet score')
     parser.add_argument('--val_viewer', type=bool, default=False)
     parser.add_argument('--multi', type=bool, default=False, help='If multi gpu trainer or not')
-    parser.add_argument('--num_workers', type=bool, default=2)
+    parser.add_argument('--num_workers', type=int, default=4)
 
     config = parser.parse_args()
     main(config)
