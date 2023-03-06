@@ -46,7 +46,7 @@ def worker_optimizer(config):
 	torch_ds = TorchSet(train_img_data, train_GT_data)
 	print('Dataset compiled')
 
-	for num_workers in range(2, os.cpu_count(), 2):
+	for num_workers in range(2, config.cpu_count, 2):
 		monai_loader = ThreadDataLoader(monai_ds, num_workers=num_workers, batch_size=config.batch_size, shuffle=True)
 		start_monai = time()
 		for epoch in range(1, 3):
@@ -55,7 +55,7 @@ def worker_optimizer(config):
 		end_monai = time()
 		print("Monai finish with:{} second, num_workers={}".format(end_monai - start_monai, num_workers))
 
-	for num_workers in range(2, os.cpu_count(), 2):
+	for num_workers in range(2, config.cpu_count, 2):
 		torch_loader = DataLoader(torch_ds, num_workers=num_workers, batch_size=config.batch_size, shuffle=True)
 		start_torch = time()
 		for epoch in range(1, 3):
@@ -67,10 +67,8 @@ def worker_optimizer(config):
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
-
-	# Training hyper-parameters
 	parser.add_argument('--batch_size', type=int, default=1)
-
+	parser.add_argument('--cpu_count', type=int, default=int(os.cpu_count()))
 	# Paths
 	parser.add_argument('--train_img_path', type=str, default='./tiny_data/train_img_data.npy')
 	parser.add_argument('--train_GT_path', type=str, default='./tiny_data/train_GT_data.npy')
