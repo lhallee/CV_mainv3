@@ -195,14 +195,14 @@ class Trainer(object):
 
 
     def val_viewer(self, recon, GT):
+        import matplotlib.pyplot as plt
         recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
         GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
         plot = np.hstack((recons, GTs))
         ratio = 0.05
         plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
-        cv2.imshow('Reconstruction vs. GT', plot)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        plt.imshow(np.array(plot))
+        plt.show()
 
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):
