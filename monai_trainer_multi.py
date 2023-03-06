@@ -143,6 +143,30 @@ class Trainer(object):
             dist.all_reduce(param.grad.data, op=dist.ReduceOp.SUM)
             param.grad.data /= self.wold_size
 
+    def window_recon(self, SR):
+        qdim = int(self.dim / 4)
+        hdim = int(self.dim / 2)
+        recon = np.zeros(((self.num_col + 1) * hdim, (self.num_row + 1) * hdim))
+        k = 0
+        for i in range(self.num_col):
+            for j in range(self.num_row):
+                inner = SR[k][qdim:3*qdim, qdim:3*qdim]
+                recon[i * hdim:(i + 1) * hdim, j * hdim:(j + 1) * hdim] = inner
+                k += 1
+        return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
+
+    def val_viewer(self, recon, GT, epoch):
+        recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
+        GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
+        plot = np.hstack((recons, GTs))
+        ratio = 0.05
+        plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
+        cv2.imwrite(self.result_path + str(epoch) + 'valimg.png', plot)
+        #import matplotlib.pyplot as plt
+        #plt.imshow(plot)
+        #plt.imsave(plot)
+        #plt.show()
+
     def train(self):
         self.build_model()
         scaler = torch.cuda.amp.GradScaler()
@@ -199,29 +223,6 @@ class Trainer(object):
             pbar_train.close() #close progress bar
             self.valid(epoch) #call validation
             epoch += 1
-
-    def window_recon(self, SR):
-        qdim = int(self.dim / 4)
-        hdim = int(self.dim / 2)
-        recon = np.zeros(((self.num_col + 1) * hdim, (self.num_row + 1) * hdim))
-        k = 0
-        for i in range(self.num_col):
-            for j in range(self.num_row):
-                inner = SR[k][qdim:3*qdim, qdim:3*qdim]
-                recon[i * hdim:(i + 1) * hdim, j * hdim:(j + 1) * hdim] = inner
-                k += 1
-        return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
-
-
-    def val_viewer(self, recon, GT):
-        recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
-        GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
-        plot = np.hstack((recons, GTs))
-        ratio = 0.05
-        plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
-        cv2.imshow('Reconstruction vs. GT', plot)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
 
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):

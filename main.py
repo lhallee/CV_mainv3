@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import torch
-from torch.utils import data
-from monai_trainer_single import Trainer as monaiTrainer
+from monai_trainer_single import Trainer as monaisingleTrainer
+from monai_trainer_multi import Trainer as monaimultiTrainer
 from trainer import Trainer as regTrainer
 from torch.backends import cudnn
 #from evaluation import eval_solver
@@ -20,7 +19,10 @@ def main(config):
     #Train utilizes random weights to train until stopping criteria of the number of epochs
     #then calls the test function
     if config.mode == 'train':
-        solver = monaiTrainer(config)
+        if config.multi:
+            solver = monaimultiTrainer(config)
+        else:
+            solver = monaisingleTrainer(config)
         solver.train()
 
 
@@ -58,6 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('--eval_type', type=str, default='Windowed', help='Type of evaluation. Windowed, Crops, Scaled')
     parser.add_argument('--stop', type=float, default=0.975, help='Minimum stopping criteria for unet score')
     parser.add_argument('--val_viewer', type=bool, default=False)
+    parser.add_argument('--multi', type=bool, default=False, help='If multi gpu trainer or not')
 
     config = parser.parse_args()
     main(config)
