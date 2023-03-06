@@ -45,13 +45,15 @@ class Trainer(object):
 
         #Dataloaders
         print('Loading Data')
-        train_img_data = np.load(config.train_img_path)
-        train_GT_data = np.load(config.train_GT_path)
-        valid_img_data = np.load(config.val_img_path)
+        train_img_data = np.load(config.train_img_path, allow_pickle=True)
+        train_GT_data = np.load(config.train_GT_path, allow_pickle=True)
+        valid_img_data = np.load(config.val_img_path, allow_pickle=True)
         train_ds = ImageSet(train_img_data, train_GT_data)
         valid_ds = ValidSet(valid_img_data)
-        self.train_loader = ThreadDataLoader(train_ds, num_workers=0, batch_size=config.batch_size, shuffle=True)
-        self.valid_loader = ThreadDataLoader(valid_ds, num_workers=0, batch_size=config.batch_size, shuffle=False)
+        self.train_loader = ThreadDataLoader(train_ds, num_workers=config.num_workers,
+                                             batch_size=config.batch_size, shuffle=True)
+        self.valid_loader = ThreadDataLoader(valid_ds, num_workers=config.num_workers,
+                                             batch_size=config.batch_size, shuffle=False)
         print('Dataloaders compiled')
 
         #Model

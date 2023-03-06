@@ -61,6 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--stop', type=float, default=0.975, help='Minimum stopping criteria for unet score')
     parser.add_argument('--val_viewer', type=bool, default=False)
     parser.add_argument('--multi', type=bool, default=False, help='If multi gpu trainer or not')
+    parser.add_argument('--num_workers', type=bool, default=2)
 
     config = parser.parse_args()
     main(config)
