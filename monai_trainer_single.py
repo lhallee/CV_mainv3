@@ -194,15 +194,17 @@ class Trainer(object):
         return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
 
 
-    def val_viewer(self, recon, GT):
-        import matplotlib.pyplot as plt
+    def val_viewer(self, recon, GT, epoch):
         recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
         GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
         plot = np.hstack((recons, GTs))
         ratio = 0.05
         plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
-        plt.imshow(np.array(plot))
-        plt.show()
+        cv2.imwrite(self.result_path + str(epoch) + 'valimg.png', plot)
+        #import matplotlib.pyplot as plt
+        #plt.imshow(plot)
+        #plt.imsave(plot)
+        #plt.show()
 
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):
@@ -252,7 +254,7 @@ class Trainer(object):
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
                 print(recon.shape, GT.shape)
                 if self.viewer:
-                    self.val_viewer(recon, GT)
+                    self.val_viewer(recon, GT, epoch)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()
