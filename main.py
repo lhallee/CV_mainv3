@@ -22,8 +22,6 @@ def main(config):
     if config.mode == 'train':
         solver = monaiTrainer(config)
         solver.train()
-        solver = regTrainer(config)
-        solver.train()
 
 
 if __name__ == '__main__':
@@ -50,10 +48,8 @@ if __name__ == '__main__':
     parser.add_argument('--train_img_path', type=str, default='./tiny_data/train_img_data.npy')
     parser.add_argument('--train_GT_path', type=str, default='./tiny_data/train_GT_data.npy')
     parser.add_argument('--val_img_path', type=str, default='./tiny_data/val_img_data.npy')
-
     #parser.add_argument('--val_GT_paths', type=list, default=['./img_data/val_GT_1/', './img_data/val_GT_2/'])
     parser.add_argument('-ap', '--val_GT_paths', action='append', help='<Required> Set flag', required=True)
-
 
     # misc
     parser.add_argument('--mode', type=str, default='train', help='train, eval, CV')
@@ -61,6 +57,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_type', type=str, default='Real', help='Real or Mock data')
     parser.add_argument('--eval_type', type=str, default='Windowed', help='Type of evaluation. Windowed, Crops, Scaled')
     parser.add_argument('--stop', type=float, default=0.975, help='Minimum stopping criteria for unet score')
+    parser.add_argument('--val_viewer', type=bool, default=False)
 
     config = parser.parse_args()
     main(config)

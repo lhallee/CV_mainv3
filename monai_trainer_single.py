@@ -83,6 +83,7 @@ class Trainer(object):
         #MISC
         self.num_col = None
         self.num_row = None
+        self.viewer = config.val_viewer
 
 
     def build_model(self):
@@ -250,7 +251,8 @@ class Trainer(object):
                 a, b, c = self.val_GT[i].shape
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
                 print(recon.shape, GT.shape)
-                #self.val_viewer(recon, GT)
+                if self.viewer:
+                    self.val_viewer(recon, GT)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()
