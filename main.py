@@ -49,7 +49,7 @@ if __name__ == '__main__':
     parser.add_argument('--train_img_path', type=str, default='./tiny_data/train_img_data.npy')
     parser.add_argument('--train_GT_path', type=str, default='./tiny_data/train_GT_data.npy')
     parser.add_argument('--val_img_path', type=str, default='./tiny_data/val_img_data.npy')
-    #parser.add_argument('--val_GT_paths', type=list, default=['./img_data/val_GT_1/', './img_data/val_GT_2/'])
+    #parser.add_argument('--val_GT_paths', type=list, default=['./val_GT_1/', './val_GT_2/'])
     parser.add_argument('-ap', '--val_GT_paths', action='append', help='<Required> Set flag', required=True)
 
     # misc
