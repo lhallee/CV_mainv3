@@ -148,12 +148,12 @@ class Trainer(object):
         GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
         plot = np.hstack((recons, GTs))
         ratio = 0.05
-        plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
-        cv2.imwrite(self.result_path + str(epoch) + 'valimg.png', plot)
-        #import matplotlib.pyplot as plt
-        #plt.imshow(plot)
+        plot = np.array(cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio))))
+        #cv2.imwrite(self.result_path + str(epoch) + 'valimg.png', plot)
+        import matplotlib.pyplot as plt
+        plt.imshow(plot)
         #plt.imsave(plot)
-        #plt.show()
+        plt.show()
 
     def train(self):
         self.build_model()
@@ -256,6 +256,8 @@ class Trainer(object):
                                         for i in range(self.num_class)], axis=2)
                 a, b, c = self.val_GT[i].shape
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
+                if self.viewer:
+                    self.val_viewer(recon, GT, epoch)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()
@@ -281,8 +283,6 @@ class Trainer(object):
         #Save Best U-Net model
         #Only saved when validation metrics are improved on average
         if unet_score > self.best_unet_score:
-            if self.viewer:
-                self.val_viewer(recon, GT, epoch)
             self.best_unet_score = unet_score
             self.best_epoch = epoch
             if self.model_path != 'None':
