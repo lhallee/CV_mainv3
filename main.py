@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from trainer_single import Trainer as singleTrainer
-from monai_trainer_multi import Trainer as monaimultiTrainer
+#from monai_trainer_multi import Trainer as monaimultiTrainer
 from torch.backends import cudnn
 #from evaluation import eval_solver
 
