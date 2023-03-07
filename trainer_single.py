@@ -219,24 +219,17 @@ class Trainer(object):
         self.unet.eval()
         GTs = []
         for i in range(self.num_class):
-            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*')))
+            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*'))[::-1])
+            # the [::-1] is strictly unnecessary!!!!!!!!!!!! ONLY BECAUSE OF THE CURRENT 256 VAL SET
         if self.num_col is None:
+            a, b = np.array(cv2.imread(GTs[0][0], 2)).shape
             self.val_GT = np.concatenate([
-                np.concatenate([np.array(cv2.imread(GTs[i][j], 2), dtype=np.float32).reshape(1,
-                                                                                             np.array(
-                                                                                                 cv2.imread(GTs[i][j],
-                                                                                                            2)).shape[
-                                                                                                 0],
-                                                                                             np.array(
-                                                                                                 cv2.imread(GTs[i][j],
-                                                                                                            2)).shape[
-                                                                                                 1], 1)
+                np.concatenate([np.array(cv2.imread(GTs[i][j], 2), dtype=np.float32).reshape(1, a, b, 1)
                                 for j in range(len(GTs[i]))], axis=0)
                 for i in range(len(GTs))], axis=3)
             a, b, c, d = view_as_windows(np.array(cv2.imread(GTs[0][0], 2)), (self.dim, self.dim),
                                                step=int(self.dim / 2)).shape
             self.num_col, self.num_row = a, b
-
         acc = 0.  # Accuracy
         RE = 0.  # Sensitivity (Recall)
         SP = 0.  # Specificity
@@ -245,34 +238,31 @@ class Trainer(object):
         DC = 0.  # Dice Coefficient
         length = 0
 
-        loop = tqdm(self.valid_loader, leave=True)
+        loop = tqdm(self.valid_loader, desc='Validation', leave=True)
         if torch.cuda.is_available():
             with torch.cuda.amp.autocast():
                 SRs = np.concatenate([self.unet(batch.to(self.device)).detach().cpu().numpy() for batch in loop])
         else:
             SRs = np.concatenate([self.unet(batch.to(self.device)).detach().cpu().numpy() for batch in loop])
         SRs = np.transpose(SRs, axes=(0, 2, 3, 1))  # back to normal img format
-
-        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Validation'):
-            try:
-                single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
-                recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
-                                        for i in range(self.num_class)], axis=2)
-                a, b, c = self.val_GT[i].shape
-                GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
-                if self.use_viewer:
-                    self.viewer(recon, GT, True)
-                # Calculate metrics
-                _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
-                acc += _acc.item()
-                DC += _DC.item()
-                RE += _RE.item()
-                SP += _SP.item()
-                PC += _PC.item()
-                F1 += _F1.item()
-                length += 1
-            except:
-                continue
+        a, b, c = self.val_GT[0].shape
+        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Reconstruction'):
+            single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
+            recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
+                                    for i in range(self.num_class)], axis=2)
+            GT = self.val_GT[i][:int(int(a / (self.dim / 2)) * self.dim / 2),
+                 :int(int(b / (self.dim / 2)) * self.dim / 2)]
+            if self.use_viewer:
+                self.viewer(recon, GT, True)
+            # Calculate metrics
+            _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
+            acc += _acc.item()
+            DC += _DC.item()
+            RE += _RE.item()
+            SP += _SP.item()
+            PC += _PC.item()
+            F1 += _F1.item()
+            length += 1
 
         acc = acc / length
         RE = RE / length
