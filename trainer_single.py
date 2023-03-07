@@ -1,14 +1,14 @@
 import cv2
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from natsort import natsorted
 from glob import glob
 from skimage.util import view_as_windows
-from monai.losses import DiceCELoss
 from models import *
-from model_parts import CosineWarmupScheduler, _calculate_overlap_metrics
+from model_parts import CosineWarmupScheduler, _calculate_overlap_metrics, DiceBCELoss
 
 
 class ImageSet(Dataset):
@@ -88,7 +88,7 @@ class Trainer(object):
         #MISC
         self.num_col = None
         self.num_row = None
-        self.viewer = config.val_viewer
+        self.use_viewer = config.use_viewer
 
 
     def build_model(self):
@@ -108,8 +108,8 @@ class Trainer(object):
             self.unet = TestNet(img_ch=self.img_ch, output_ch=self.num_class)
             self.valid(0)
 
-        if self.loss == 'DiceCE':
-            self.criterion = DiceCELoss(sigmoid=False).to(self.device)
+        if self.loss == 'DiceBCE':
+            self.criterion = DiceBCELoss().to(self.device)
 
 
         self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr, (self.beta1, self.beta2))
@@ -143,14 +143,14 @@ class Trainer(object):
                 k += 1
         return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
 
-    def val_viewer(self, recon, GT, epoch):
-        recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
+    def viewer(self, pred, GT, val):
+        recons = np.vstack([pred[:, :, i] for i in range(self.num_class)])
         GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
         plot = np.hstack((recons, GTs))
-        ratio = 0.05
-        plot = np.array(cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio))))
+        if val:
+            ratio = 0.05
+            plot = np.array(cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio))))
         #cv2.imwrite(self.result_path + str(epoch) + 'valimg.png', plot)
-        import matplotlib.pyplot as plt
         plt.imshow(plot)
         #plt.imsave(plot)
         plt.show()
@@ -187,6 +187,8 @@ class Trainer(object):
                     self.scheduler.step()
                 scaler.update()
                 #calculate metrics
+                if length % 10 == 0 and self.use_viewer:
+                    self.viewer(np.array(SR.detach().cpu()), np.array(GT.detach().cpu()), False)
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(SR.detach().cpu(), GT.detach().cpu())
                 acc += _acc.item()
                 DC += _DC.item()
@@ -256,8 +258,8 @@ class Trainer(object):
                                         for i in range(self.num_class)], axis=2)
                 a, b, c = self.val_GT[i].shape
                 GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
-                if self.viewer:
-                    self.val_viewer(recon, GT, epoch)
+                if self.use_viewer:
+                    self.viewer(recon, GT, True)
                 # Calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
                 acc += _acc.item()

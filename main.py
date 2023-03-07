@@ -41,7 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=0.003)
     parser.add_argument('--beta1', type=float, default=0.5)  # momentum1 in Adam
     parser.add_argument('--beta2', type=float, default=0.999)  # momentum2 in Adam
-    parser.add_argument('--loss', type=str, default='DiceCE', help='BCE, DiceCE, IOU, CE, DiceIOU')
+    parser.add_argument('--loss', type=str, default='DiceBCE', help='BCE, DiceBCE, IOU, CE, DiceIOU')
 
     # Paths
     parser.add_argument('--model_path', type=str, default='None', help='Path for model weights')
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_type', type=str, default='Real', help='Real or Mock data')
     parser.add_argument('--eval_type', type=str, default='Windowed', help='Type of evaluation. Windowed, Crops, Scaled')
     parser.add_argument('--stop', type=float, default=0.975, help='Minimum stopping criteria for unet score')
-    parser.add_argument('--val_viewer', type=bool, default=False)
+    parser.add_argument('--use_viewer', type=bool, default=False)
     parser.add_argument('--multi', type=bool, default=False, help='If multi gpu trainer or not')
     parser.add_argument('--num_workers', type=int, default=4)
 
