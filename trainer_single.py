@@ -277,6 +277,7 @@ class Trainer(object):
         #Save Best U-Net model
         #Only saved when validation metrics are improved on average
         if unet_score > self.best_unet_score:
+            self.best_unet - self.unet.state_dict()
             self.best_unet_score = unet_score
             self.best_epoch = epoch
             if self.model_path != 'None':

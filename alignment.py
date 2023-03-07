@@ -49,12 +49,23 @@ im2 = cv2.resize(img, dim)
 align, warp_matrix = align_images(im1, im2)
 '''
 
-stacks_path = 'C:/Users/Logan Hallee/Desktop/1_26_result/result/'
-lop = natsorted(glob(stacks_path + 'sec*'))
-print(lop)
-full_paths = []
-for i in range(len(lop)):
-    full_paths.append(natsorted(glob(lop[i] + '/*.png')))
+stacks_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/1_26_sectioned_results/'
+save_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/1_26aligned/'
+
+def align_stacks(stacks_path, save_path):
+    lop = natsorted(glob(stacks_path + 'sec*'))
+    print(lop)
+    full_paths = []
+    for i in range(len(lop)):
+        full_paths.append(natsorted(glob(lop[i] + '/*.png')))
+    for i in range(len(full_paths[0])):
+        img = np.array(cv2.imread(full_paths[0][i], 2))
+        plt.imsave(save_path + 'section1' + str('_aligned') + str(full_paths[0][i]).split('/')[-1], img)
+
+    print('here')
+
+
+align_stacks(stacks_path, save_path)
 
 for i in range(len(full_paths)-1):
     template = np.array(cv2.imread(full_paths[i][-1], 2)[:, 5632:], dtype=np.float32)
