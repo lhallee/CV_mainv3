@@ -186,7 +186,7 @@ class Trainer(object):
                 if self.scheduler is not None:
                     self.scheduler.step()
                 scaler.update()
-                if length % 10 == 0 and self.use_viewer:
+                if length % 100 == 0 and self.use_viewer:
                     self.viewer(np.transpose(SR.detach().cpu(), axes=(0, 2, 3, 1))[0],
                                 np.transpose(GT.detach().cpu(), axes=(0, 2, 3, 1))[0],
                                 False)
