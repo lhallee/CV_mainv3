@@ -61,7 +61,6 @@ class Trainer(object):
 
         #Model
         self.model_type = config.model_type
-        self.t = config.t
         self.unet = None
         self.best_unet = None #might not need
         self.optimizer = None
@@ -76,8 +75,7 @@ class Trainer(object):
 
         #Hyper-parameters
         self.lr = config.lr
-        self.beta1 = config.beta1
-        self.beta2 = config.beta2
+        self.t = config.t
 
         #Paths
         self.model_path = config.model_path
@@ -111,13 +109,14 @@ class Trainer(object):
         if self.loss == 'DiceBCE':
             self.criterion = DiceBCELoss().to(self.device)
 
-
-        self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr, (self.beta1, self.beta2))
+        self.optimizer = torch.optim.AdamW(list(self.unet.parameters()), self.lr)
         if self.scheduler == 'exp':
             self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99, last_epoch=-1)
         elif self.scheduler == 'cosine':
             self.scheduler = CosineWarmupScheduler(self.optimizer, warmup=len(self.train_loader) * 4,
                                                    max_iters=len(self.train_loader) * self.num_epochs)
+        elif self.scheduler == 'cyclic':
+            self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, self.lr, 10 * self.lr, mode='Exp_range')
 
         self.unet.to(self.device)
         #self.print_network(self.unet, self.model_type)

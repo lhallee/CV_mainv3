@@ -1,7 +1,8 @@
 import cv2
 import numpy as np
 import torch
-from torch import optim
+import matplotlib.pyplot as plt
+from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from models import *
 from model_parts import DiceBCELoss, Dice_IOU_Loss, _calculate_overlap_metrics, CosineWarmupScheduler, IoULoss
@@ -9,7 +10,8 @@ from natsort import natsorted
 from glob import glob
 from skimage.util import view_as_windows
 
-class ImageSet(torch.utils.data.Dataset):
+
+class ImageSet(Dataset):
     # Custom pytorch dataset, simply indexes imgs and gts
     def __init__(self, imgs, GTs):
         self.imgs = imgs
@@ -22,7 +24,7 @@ class ImageSet(torch.utils.data.Dataset):
         return img, GT
 
 
-class ValidSet(torch.utils.data.Dataset):
+class ValidSet(Dataset):
     # Custom pytorch dataset, simply indexes imgs
     def __init__(self, imgs):
         self.imgs = imgs
@@ -31,6 +33,7 @@ class ValidSet(torch.utils.data.Dataset):
     def __getitem__(self, index):
         img = torch.tensor(self.imgs[index], dtype=torch.float)
         return img
+
 
 class Trainer(object):
     def __init__(self, config):
@@ -50,13 +53,15 @@ class Trainer(object):
         valid_img_data = np.load(config.val_img_path, allow_pickle=True)
         train_ds = ImageSet(train_img_data, train_GT_data)
         valid_ds = ValidSet(valid_img_data)
-        self.train_loader = torch.utils.data.DataLoader(train_ds, num_workers=0, batch_size=config.batch_size, shuffle=True)
-        self.valid_loader = torch.utils.data.DataLoader(valid_ds, num_workers=0, batch_size=config.batch_size, shuffle=False)
+        self.train_loader = DataLoader(train_ds, num_workers=config.num_workers,
+                                       batch_size=config.batch_size, shuffle=True)
+        self.valid_loader = DataLoader(valid_ds, num_workers=config.num_workers,
+                                       batch_size=config.batch_size, shuffle=False)
         print('Dataloaders compiled')
 
         # Model
         self.model_type = config.model_type
-        self.t = config.t
+
         self.unet = None
         self.best_unet = None  # might not need
         self.optimizer = None
@@ -71,8 +76,7 @@ class Trainer(object):
 
         # Hyper-parameters
         self.lr = config.lr
-        self.beta1 = config.beta1
-        self.beta2 = config.beta2
+        self.t = config.t
 
         # Paths
         self.model_path = config.model_path
@@ -83,6 +87,7 @@ class Trainer(object):
         # MISC
         self.num_col = None
         self.num_row = None
+        self.use_viewer = config.use_viewer
 
 
     def build_model(self):
@@ -103,17 +108,17 @@ class Trainer(object):
             self.valid(0)
 
         if self.loss == 'BCE':
-            self.criterion = nn.BCELoss()
+            self.criterion = nn.BCELoss().to(self.device)
         elif self.loss == 'DiceCE':
-            self.criterion = DiceBCELoss()
+            self.criterion = DiceBCELoss().to(self.device)
         elif self.loss == 'IOU':
-            self.criterion = IoULoss()
+            self.criterion = IoULoss().to(self.device)
         elif self.loss == 'CE':
-            self.criterion = nn.CrossEntropyLoss()
+            self.criterion = nn.CrossEntropyLoss().to(self.device)
         elif self.loss == 'DiceIOU':
-            self.criterion = Dice_IOU_Loss()
+            self.criterion = Dice_IOU_Loss().to(self.device)
 
-        self.optimizer = optim.Adam(list(self.unet.parameters()), self.lr, (self.beta1, self.beta2))
+        self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr, (self.beta1, self.beta2))
         if self.scheduler == 'exp':
             self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99, last_epoch=-1)
         elif self.scheduler == 'cosine':
@@ -131,10 +136,37 @@ class Trainer(object):
         print(name)
         print("The number of parameters: {}".format(num_params))
 
+    def window_recon(self, SR):
+        qdim = int(self.dim / 4)
+        hdim = int(self.dim / 2)
+        recon = np.zeros(((self.num_col + 1) * hdim, (self.num_row + 1) * hdim))
+        k = 0
+        for i in range(self.num_col):
+            for j in range(self.num_row):
+                inner = SR[k][qdim:3*qdim, qdim:3*qdim]
+                recon[i * hdim:(i + 1) * hdim, j * hdim:(j + 1) * hdim] = inner
+                k += 1
+        return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
+
+    def viewer(self, pred, GT, val):
+        recons = np.vstack([pred[:, :, i] for i in range(self.num_class)])
+        GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
+        plot = np.hstack((recons, GTs))
+        if val:
+            ratio = 0.05
+            plot = np.array(cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio))))
+        #cv2.imwrite(self.result_path + str(epoch) + 'valimg.png', plot)
+        plt.imshow(plot)
+        #plt.imsave(plot)
+        plt.show()
+
     def train(self):
         self.build_model()
         if self.model_path != 'None':
-            self.unet.load_state_dict(torch.load(self.model_path, map_location=self.device))
+            try:
+                self.unet.load_state_dict(torch.load(self.model_path, map_location=self.device))
+            except:
+                pass
         epoch = 0
         #Unet score is the average of our metrics calculated from validation
         while epoch < self.num_epochs and self.best_unet_score < self.stop:
@@ -183,51 +215,22 @@ class Trainer(object):
             self.valid(epoch) #call validation
             epoch += 1
 
-    def window_recon(self, SR):
-        qdim = int(self.dim / 4)
-        hdim = int(self.dim / 2)
-        recon = np.zeros(((self.num_col + 1) * hdim, (self.num_row + 1) * hdim))
-        k = 0
-        for i in range(self.num_col):
-            for j in range(self.num_row):
-                inner = SR[k][qdim:3*qdim, qdim:3*qdim]
-                recon[i * hdim:(i + 1) * hdim, j * hdim:(j + 1) * hdim] = inner
-                k += 1
-        return recon.reshape((self.num_col + 1) * hdim, (self.num_row + 1) * hdim, 1)
-
-
-    def val_viewer(self, recon, GT):
-        recons = np.vstack([recon[:, :, i] for i in range(self.num_class)])
-        GTs = np.vstack([GT[:, :, i] for i in range(self.num_class)])
-        plot = np.hstack((recons, GTs))
-        ratio = 0.05
-        plot = cv2.resize(plot, (int(plot.shape[1] * ratio), int(plot.shape[0] * ratio)))
-        cv2.imshow('Reconstruction vs. GT', plot)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
     @torch.no_grad() #don't update weights during validation
     def valid(self, epoch):
+        self.unet.eval()
         GTs = []
         for i in range(self.num_class):
-            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*')))
+            GTs.append(natsorted(glob(self.val_GT_paths[i] + '*'))[::-1])
+            # the [::-1] is strictly unnecessary!!!!!!!!!!!! ONLY BECAUSE OF THE CURRENT 256 VAL SET
         if self.num_col is None:
+            a, b = np.array(cv2.imread(GTs[0][0], 2)).shape
             self.val_GT = np.concatenate([
-                np.concatenate([np.array(cv2.imread(GTs[i][j], 2), dtype=np.float32).reshape(1,
-                                                                                             np.array(
-                                                                                                 cv2.imread(GTs[i][j],
-                                                                                                            2)).shape[
-                                                                                                 0],
-                                                                                             np.array(
-                                                                                                 cv2.imread(GTs[i][j],
-                                                                                                            2)).shape[
-                                                                                                 1], 1)
+                np.concatenate([np.array(cv2.imread(GTs[i][j], 2), dtype=np.float32).reshape(1, a, b, 1)
                                 for j in range(len(GTs[i]))], axis=0)
                 for i in range(len(GTs))], axis=3)
             a, b, c, d = view_as_windows(np.array(cv2.imread(GTs[0][0], 2)), (self.dim, self.dim),
-                                               step=int(self.dim / 2)).shape
+                                         step=int(self.dim / 2)).shape
             self.num_col, self.num_row = a, b
-
         acc = 0.  # Accuracy
         RE = 0.  # Sensitivity (Recall)
         SP = 0.  # Specificity
@@ -235,45 +238,41 @@ class Trainer(object):
         F1 = 0.  # F1 Score
         DC = 0.  # Dice Coefficient
         length = 0
-
-        loop = tqdm(self.valid_loader, leave=True)
+        loop = tqdm(self.valid_loader, desc='Validation', leave=True)
         SRs = np.concatenate([self.unet(batch.to(self.device)).detach().cpu().numpy() for batch in loop])
         SRs = np.transpose(SRs, axes=(0, 2, 3, 1))  # back to normal img format
-
-        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Validation'):
-            try:
-                single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
-                recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
-                                        for i in range(self.num_class)], axis=2)
-                a, b, c = self.val_GT[i].shape
-                GT = self.val_GT[i][:int(int(a/(self.dim/2))*self.dim/2), :int(int(b/(self.dim/2))*self.dim/2)]
-                print(recon.shape, GT.shape)
-                #self.val_viewer(recon, GT)
-                # Calculate metrics
-                _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
-                acc += _acc.item()
-                DC += _DC.item()
-                RE += _RE.item()
-                SP += _SP.item()
-                PC += _PC.item()
-                F1 += _F1.item()
-                length += 1
-            except:
-                continue
-
+        a, b, c = self.val_GT[0].shape
+        for i in tqdm(range(int(len(SRs) / (self.num_row * self.num_col))), desc='Reconstruction'):
+            single_SR = SRs[i * self.num_row * self.num_col:(i + 1) * self.num_row * self.num_col]
+            recon = np.concatenate([self.window_recon(single_SR[:, :, :, i])
+                                    for i in range(self.num_class)], axis=2)
+            GT = self.val_GT[i][:int(int(a / (self.dim / 2)) * self.dim / 2),
+                 :int(int(b / (self.dim / 2)) * self.dim / 2)]
+            if self.use_viewer:
+                self.viewer(recon, GT, True)
+            # Calculate metrics
+            _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
+            acc += _acc.item()
+            DC += _DC.item()
+            RE += _RE.item()
+            SP += _SP.item()
+            PC += _PC.item()
+            F1 += _F1.item()
+            length += 1
         acc = acc / length
         RE = RE / length
         SP = SP / length
         PC = PC / length
         F1 = F1 / length
         DC = DC / length
-        #unet_score is an average of metrics
+        # unet_score is an average of metrics
         unet_score = (F1 + DC + PC + SP + RE + acc) / 6
         print('[Validation] Acc: %.4f, RE: %.4f, SP: %.4f, PC: %.4f, F1: %.4f, DC: %.4f' % (
             acc, RE, SP, PC, F1, DC))
-        #Save Best U-Net model
-        #Only saved when validation metrics are improved on average
+        # Save Best U-Net model
+        # Only saved when validation metrics are improved on average
         if unet_score > self.best_unet_score:
+            self.best_unet = self.unet.state_dict()
             self.best_unet_score = unet_score
             self.best_epoch = epoch
             if self.model_path != 'None':

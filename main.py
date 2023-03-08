@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from trainer_single import Trainer as singleTrainer
+from trainer import Trainer
 #from monai_trainer_multi import Trainer as monaimultiTrainer
 from torch.backends import cudnn
 #from evaluation import eval_solver
@@ -8,7 +8,6 @@ from torch.backends import cudnn
 def main(config):
     #Takes argpase config settings runs the model with them
     cudnn.benchmark = True
-
     #print(config)
     if config.mode == 'CV':
         from cross_validation import cross_validator
@@ -22,7 +21,7 @@ def main(config):
             pass
             #solver = monaimultiTrainer(config)
         else:
-            solver = singleTrainer(config)
+            solver = Trainer(config)
         solver.train()
 
 
@@ -40,8 +39,6 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.003)
-    parser.add_argument('--beta1', type=float, default=0.5)  # momentum1 in Adam
-    parser.add_argument('--beta2', type=float, default=0.999)  # momentum2 in Adam
     parser.add_argument('--loss', type=str, default='DiceBCE', help='BCE, DiceBCE, IOU, CE, DiceIOU')
 
     # Paths

@@ -1,9 +1,10 @@
 import cv2
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from natsort import natsorted
 from glob import glob
-from scipy.ndimage import rotate
+from tqdm import tqdm
 
 
 def align_images(im1, im2):
@@ -28,57 +29,47 @@ def align_images(im1, im2):
                                 flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
     return im_aligned, warp_matrix
 
-'''
-top, bottom, left, right = 500, 500, 500, 500
 
+def align_stacks(stacks_path, save_path):
+    sections = natsorted(glob(stacks_path + 'sec*')) # predicted sections
+    al_sections, full_paths = [], [] # sections for aligned results, all predicted images
+    # makes paths in save_path with how many sections needed
+    for i in tqdm(range(len(sections)), desc='Create Directories'):
+        path = save_path + 'section' + str(i+1) + '/'
+        if not os.path.exists(path):
+            os.mkdir(path)
+        al_sections.append(path)
+    for i in range(len(sections)):
+        full_paths.append(natsorted(glob(sections[i] + '/*.png')))
+    # full_paths has all sections and their image paths
+    # write section 1 to save_path, doesn't get transformed
+    for i in tqdm(range(len(full_paths[0])), desc='Save Section 1'):
+        plt.imsave(al_sections[0] + full_paths[0][i].split('\\')[-1],
+                   np.array(cv2.imread(full_paths[0][i], 2))[:, 5632:])
+    # now section1 images are in al_sections[0] directory
+    # need to transform full_paths[i] into al_sections[i] using al_sections[i-1][-1] and full_paths[i][0]
+    for i in tqdm(range(len(full_paths)-1), desc='Aligning'):
+        # add saved images to full_al_paths, similar to full_paths, but every loop so it's updated
+        full_al_paths = []
+        for k in range(len(al_sections)-1):
+            full_al_paths.append(natsorted(glob(al_sections[k] + '/*.png')))
+        template = np.array(cv2.imread(full_al_paths[i][-1], 2), dtype=np.float32)
+        to_rot = np.array(cv2.imread(full_paths[i + 1][0], 2)[:, 5632:], dtype=np.float32)
+        sz = template.shape
+        aligned, warp_matrix = align_images(template, to_rot)
+        for j in range(len(full_paths[i + 1])):
+            to_rot = np.array(cv2.imread(full_paths[i + 1][j], 2), dtype=np.float32)[:, 5632:]
+            im_aligned = cv2.warpAffine(to_rot, warp_matrix, (sz[1], sz[0]),
+                                        flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+            plt.imsave(al_sections[i + 1] + full_paths[i + 1][j].split('\\')[-1], im_aligned)
 
-temp = cv2.copyMakeBorder(np.array(cv2.imread('img.png', 2), dtype=np.float32),
-                          top, bottom, left, right, borderType=cv2.BORDER_CONSTANT, value=0)
-
-img = rotate(cv2.copyMakeBorder(np.array(cv2.imread('img.png', 2), dtype=np.float32),
-                          top, bottom, left, right, borderType=cv2.BORDER_CONSTANT, value=0),
-             30, reshape=False)
-
-scale_percent = 10  # percent of original size
-width = int(temp.shape[1] * scale_percent / 100)
-height = int(temp.shape[0] * scale_percent / 100)
-dim = (width, height)
-im1 = cv2.resize(temp, dim)
-im2 = cv2.resize(img, dim)
-
-align, warp_matrix = align_images(im1, im2)
-'''
 
 stacks_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/1_26_sectioned_results/'
 save_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/1_26aligned/'
-
-def align_stacks(stacks_path, save_path):
-    lop = natsorted(glob(stacks_path + 'sec*'))
-    print(lop)
-    full_paths = []
-    for i in range(len(lop)):
-        full_paths.append(natsorted(glob(lop[i] + '/*.png')))
-    for i in range(len(full_paths[0])):
-        img = np.array(cv2.imread(full_paths[0][i], 2))
-        plt.imsave(save_path + 'section1' + str('_aligned') + str(full_paths[0][i]).split('/')[-1], img)
-
-    print('here')
-
-
 align_stacks(stacks_path, save_path)
 
-for i in range(len(full_paths)-1):
-    template = np.array(cv2.imread(full_paths[i][-1], 2)[:, 5632:], dtype=np.float32)
-    to_rot = np.array(cv2.imread(full_paths[i+1][0], 2)[:, 5632:], dtype=np.float32)
-    big_sz = template.shape
-    scale_percent = 10  # percent of original size
-    width = int(big_sz[1] * scale_percent / 100)
-    height = int(big_sz[0] * scale_percent / 100)
-    dim = (width, height)
-    im1 = cv2.resize(template, dim)
-    sz = im1.shape
-    im2 = cv2.resize(to_rot, dim)
-    aligned, warp_matrix = align_images(im1, im2)
-    for i in range(len(full_paths[i+1])):
-        im_aligned = cv2.warpAffine(im2, warp_matrix, (sz[1], sz[0]),
-                                flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
+'''
+        scale_percent = 100  # percent of original size
+        width = int(big_sz[1] * scale_percent / 100)
+        height = int(big_sz[0] * scale_percent / 100)
+'''
