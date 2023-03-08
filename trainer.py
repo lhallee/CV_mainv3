@@ -125,7 +125,8 @@ class Trainer(object):
             self.scheduler = CosineWarmupScheduler(self.optimizer, warmup=len(self.train_loader) * 4,
                                                    max_iters=len(self.train_loader) * self.num_epochs)
         elif self.scheduler == 'cyclic':
-            self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, self.lr, 5 * self.lr, mode='exp_range')
+            self.scheduler = torch.optim.lr_scheduler.CyclicLR(self.optimizer, self.lr, 5 * self.lr,
+                                                               mode='exp_range', cycle_momentum=False)
         self.unet.to(self.device)
         #self.print_network(self.unet, self.model_type)
 
