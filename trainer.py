@@ -118,7 +118,7 @@ class Trainer(object):
         elif self.loss == 'DiceIOU':
             self.criterion = Dice_IOU_Loss().to(self.device)
 
-        self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr, (self.beta1, self.beta2))
+        self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr)
         if self.scheduler == 'exp':
             self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99, last_epoch=-1)
         elif self.scheduler == 'cosine':
