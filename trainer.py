@@ -109,7 +109,7 @@ class Trainer(object):
 
         if self.loss == 'BCE':
             self.criterion = nn.BCELoss().to(self.device)
-        elif self.loss == 'DiceCE':
+        elif self.loss == 'DiceBCE':
             self.criterion = DiceBCELoss().to(self.device)
         elif self.loss == 'IOU':
             self.criterion = IoULoss().to(self.device)
