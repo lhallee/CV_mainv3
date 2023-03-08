@@ -32,8 +32,8 @@ if __name__ == '__main__':
     parser.add_argument('--t', type=int, default=3, help='Number of recurrent steps')
     parser.add_argument('--num_class', type=int, default=2, help='Number of classes for segmentation')
     parser.add_argument('--img_ch', type=int, default=3)
-    parser.add_argument('--scheduler', type=str, default='cosine', help='None, exp, cosine')
-    parser.add_argument('--model_type', type=str, default='R2AttU_Net', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigNET')
+    parser.add_argument('--scheduler', type=str, default='cyclic', help='None, exp, cosine, cyclic')
+    parser.add_argument('--model_type', type=str, default='R2AttU_Net', help='U_Net/R2U_Net/AttU_Net/R2AttU_Net/Vis/BigNeT')
 
     # Training hyper-parameters
     parser.add_argument('--num_epochs', type=int, default=10)
