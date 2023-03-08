@@ -194,6 +194,10 @@ class Trainer(object):
                 self.optimizer.step()
                 if self.scheduler is not None:
                     self.scheduler.step()
+                if length % 1000 == 0 and self.use_viewer:
+                    self.viewer(np.transpose(SR.detach().cpu(), axes=(0, 2, 3, 1))[0],
+                                np.transpose(GT.detach().cpu(), axes=(0, 2, 3, 1))[0],
+                                False)
                 #calculate metrics
                 _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(SR.detach().cpu(), GT.detach().cpu())
                 acc += _acc.item()
