@@ -99,7 +99,7 @@ class Trainer(object):
             self.unet = AttU_Net(img_ch=self.img_ch, output_ch=self.num_class)
         elif self.model_type == 'R2AttU_Net':
             self.unet = R2AttU_Net(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
-        elif self.model_type == 'BigNET':
+        elif self.model_type == 'BigNet':
             self.unet = BigR2AttU_Net(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
         elif self.model_type == 'Vis':
             self.unet = R2AttU_Net_vis(img_ch=self.img_ch, output_ch=self.num_class, t=self.t)
