@@ -59,6 +59,7 @@ if __name__ == '__main__':
     parser.add_argument('--use_viewer', type=bool, default=False)
     parser.add_argument('--multi', type=bool, default=False, help='If multi gpu trainer or not')
     parser.add_argument('--num_workers', type=int, default=4)
+    parser.add_argument('--freq', type=int, default=1000, help='How many batches to use viewer')
 
     config = parser.parse_args()
     main(config)

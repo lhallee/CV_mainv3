@@ -87,6 +87,7 @@ class Trainer(object):
         self.num_col = None
         self.num_row = None
         self.use_viewer = config.use_viewer
+        self.freq = config.freq
 
 
     def build_model(self):
@@ -195,7 +196,7 @@ class Trainer(object):
                 self.optimizer.step()
                 if self.scheduler is not None:
                     self.scheduler.step()
-                if length % 1000 == 0 and self.use_viewer:
+                if length % self.freq == 0 and self.use_viewer:
                     self.viewer(np.transpose(SR.detach().cpu(), axes=(0, 2, 3, 1))[0],
                                 np.transpose(GT.detach().cpu(), axes=(0, 2, 3, 1))[0],
                                 False)

@@ -59,9 +59,9 @@ def preview_crops(imgs, GTs, num_class=2):
             plt.title('GT')
             plt.show()
 
-train_img_path = './tiny_data/train_img_data.npy'
-train_GT_path = './tiny_data/train_GT_data.npy'
-valid_img_path = './tiny_data/val_img_data.npy'
+train_img_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/training_data/256mini_img.npy'
+train_GT_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/training_data/256mini_GT.npy'
+valid_img_path = 'C:/Users/Logan Hallee/Desktop/LN IMAGES/training_data/256val_img_data.npy'
 val_GT_1 = ''
 val_GT_2 = ''
 
