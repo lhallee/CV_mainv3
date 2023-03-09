@@ -92,8 +92,15 @@ class training_processing:
 
         val_imgs = np.concatenate([self.crop_val(img=val_img_paths[i])
                                    for i in tqdm(range(len(val_img_paths)), desc='Cropping Val')], axis=0)
-
-
+        #Trim some all black images
+        print(crop_imgs.shape, crop_GTs.shape)
+        dels = []
+        for i in range(len(crop_imgs)):
+            if np.count_nonzero(crop_imgs[i]) <= 0.01 * crop_imgs[i].size and i % 2 == 0:
+                dels.append(i)
+        crop_imgs = np.delete(crop_imgs, dels, axis=0)
+        crop_GTs = np.delete(crop_GTs, dels, axis=0)
+        print(crop_imgs.shape, crop_GTs.shape)
         #numpy array to torch tensor, move around columns for pytorch convolution
         crop_imgs = np.transpose(crop_imgs, axes=(0, 3, 1, 2))
         crop_GTs = np.transpose(crop_GTs, axes=(0, 3, 1, 2))
@@ -115,10 +122,12 @@ def main(config):
     elif config.mode == 'train':
         data_setup = training_processing(config)
         crop_imgs, crop_GTs, val_imgs = data_setup.to_large_dataarray()
-        np.save(config.save_path + 'train_img_data.npy', crop_imgs)
-        np.save(config.save_path + 'train_GT_data.npy', crop_GTs)
-        np.save(config.save_path + 'val_img_data.npy', val_imgs)
-
+        mini_imgs, mini_GTs = crop_imgs[1000:2000], crop_GTs[1000:2000]
+        np.save(config.save_path + str(config.image_size) + 'img_data.npy', crop_imgs)
+        np.save(config.save_path + str(config.image_size) + 'GT_data.npy', crop_GTs)
+        np.save(config.save_path + str(config.image_size) + 'val_img_data.npy', val_imgs)
+        np.save(config.save_path + str(config.image_size) + 'mini_img.npy', mini_imgs)
+        np.save(config.save_path + str(config.image_size) + 'mini_GT.npy', mini_GTs)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
