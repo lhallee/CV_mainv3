@@ -39,7 +39,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.003)
-    parser.add_argument('--loss', type=str, default='DiceBCE', help='BCE, DiceBCE, IOU, CE, DiceIOU')
+    parser.add_argument('--loss', type=str, default='MultiNoiseLoss', help='BCE, DiceBCE, IOU, CE, DiceIOU, MultiNoiseLoss')
 
     # Paths
     parser.add_argument('--model_path', type=str, default='None', help='Path for model weights')

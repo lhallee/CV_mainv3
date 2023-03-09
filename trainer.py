@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from torch.utils.data import Dataset, DataLoader
 from tqdm import tqdm
 from models import *
-from model_parts import DiceBCELoss, Dice_IOU_Loss, _calculate_overlap_metrics, CosineWarmupScheduler, IoULoss
+from model_parts import *
 from natsort import natsorted
 from glob import glob
 from skimage.util import view_as_windows
@@ -61,7 +61,6 @@ class Trainer(object):
 
         # Model
         self.model_type = config.model_type
-
         self.unet = None
         self.best_unet = None  # might not need
         self.optimizer = None
@@ -117,6 +116,8 @@ class Trainer(object):
             self.criterion = nn.CrossEntropyLoss().to(self.device)
         elif self.loss == 'DiceIOU':
             self.criterion = Dice_IOU_Loss().to(self.device)
+        elif self.loss == 'MultiNoiseLoss':
+            self.criterion = MultiNoiseLoss(self.num_class).to(self.device)
 
         self.optimizer = torch.optim.AdamW(list(self.unet.parameters()), self.lr)
         if self.scheduler == 'exp':
@@ -199,7 +200,7 @@ class Trainer(object):
                                 np.transpose(GT.detach().cpu(), axes=(0, 2, 3, 1))[0],
                                 False)
                 #calculate metrics
-                _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(SR.detach().cpu(), GT.detach().cpu())
+                _acc, _DC, _PC, _RE, _SP, _F1 = calculate_overlap_metrics(SR.detach().cpu(), GT.detach().cpu())
                 acc += _acc.item()
                 DC += _DC.item()
                 RE += _RE.item()
@@ -258,7 +259,7 @@ class Trainer(object):
             if self.use_viewer:
                 self.viewer(recon, GT, True)
             # Calculate metrics
-            _acc, _DC, _PC, _RE, _SP, _F1 = _calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
+            _acc, _DC, _PC, _RE, _SP, _F1 = calculate_overlap_metrics(torch.tensor(recon), torch.tensor(GT))
             acc += _acc.item()
             DC += _DC.item()
             RE += _RE.item()
