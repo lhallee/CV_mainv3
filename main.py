@@ -56,7 +56,7 @@ if __name__ == '__main__':
     parser.add_argument('--data_type', type=str, default='Real', help='Real or Mock data')
     parser.add_argument('--eval_type', type=str, default='Windowed', help='Type of evaluation. Windowed, Crops, Scaled')
     parser.add_argument('--stop', type=float, default=0.975, help='Minimum stopping criteria for unet score')
-    parser.add_argument('--use_viewer', type=bool, default=True)
+    parser.add_argument('--use_viewer', type=bool, default=False)
     parser.add_argument('--multi', type=bool, default=False, help='If multi gpu trainer or not')
     parser.add_argument('--num_workers', type=int, default=4)
 
