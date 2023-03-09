@@ -139,8 +139,9 @@ if __name__ == '__main__':
                         help='Path for training images')
     parser.add_argument('--val_img_path', type=str, default='./img_data/val_img/',
                         help='Path for validation images')
-    parser.add_argument('--GT_paths', type=list, default=['./img_data/GT_1/', './img_data/GT_2/'],
-                        help='List of paths for training GT (one for each class)')
+    #parser.add_argument('--GT_paths', type=list, default=['./img_data/GT_1/', './img_data/GT_2/'],
+                        #help='List of paths for training GT (one for each class)')
+    parser.add_argument('-ap', '--GT_paths', action='append', help='<Required> Set flag', required=True)
     parser.add_argument('--eval_img_path', type=str, default='./img_data/eval_img/',
                         help='Images for 2D reconstruction evaluation')
     parser.add_argument('--save_path', type=str, default='./processed_data/')
