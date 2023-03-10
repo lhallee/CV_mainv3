@@ -183,6 +183,7 @@ class Trainer(object):
             F1 = 0.  # F1 Score
             DC = 0.  # Dice Coefficient
             length = 0
+            self.unet.train()
             pbar_train = tqdm(total=len(self.train_loader), desc='Training')
             for images, GT in self.train_loader:
                 images = images.to(self.device)
