@@ -120,7 +120,7 @@ class Trainer(object):
         elif self.loss == 'MultiNoiseLoss':
             self.criterion = MultiNoiseLoss(self.num_class).to(self.device)
 
-        self.optimizer = torch.optim.AdamW(list(self.unet.parameters()), self.lr)
+        self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr)
         if self.scheduler == 'exp':
             self.scheduler = torch.optim.lr_scheduler.ExponentialLR(self.optimizer, gamma=0.99, last_epoch=-1)
         elif self.scheduler == 'cosine':
