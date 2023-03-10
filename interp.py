@@ -126,19 +126,19 @@ class interp_3d(object):
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	# Paths
-	parser.add_argument('--img_path', type=str, default='C:/Users/Logan Hallee/Desktop/1_26_preds/')
+	parser.add_argument('--img_path', type=str, default='C:/Users/Logan/Desktop/full_result_square_1_26/')
 	parser.add_argument('--save_path', type=str, default='./result/')
 	parser.add_argument('--points_path', type=str, default='./result/points.npy')
 	parser.add_argument('--colors_path', type=str, default='./result/colors.npy')
 
 	# Options
 	parser.add_argument('--rotate', type=bool, default=True)
-	parser.add_argument('--type', type=str, default='lob')
+	parser.add_argument('--type', type=str, default='hev')
 	parser.add_argument('--mode', type=str, default='open_vis', help='Which task to perform: save_npys, open_mesh, open_vis, open_ply')
 
 	# Parameters
-	parser.add_argument('--scale', type=float, default=0.01)
-	parser.add_argument('--density', type=float, default=0.2)
+	parser.add_argument('--scale', type=float, default=0.25)
+	parser.add_argument('--density', type=float, default=1)
 	parser.add_argument('--alpha', type=float, default=0.5)
 
 	config = parser.parse_args()
