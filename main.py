@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 from trainer import Trainer
-from threeD_reconstruction import eval_solver
+from twoDreconstruction import eval_solver
 from torch.backends import cudnn
 
 def main(config):
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     parser.add_argument('-eap', '--eval_img_paths', action='append', required=False)
 
     # misc
-    parser.add_argument('--mode', type=str, default='train', help='train, eval, CV, align, interpolate')
+    parser.add_argument('--mode', type=str, default='train', help='train, eval, CV')
     parser.add_argument('--cuda_idx', type=int, default=0, help='Cuda index')
     parser.add_argument('--data_type', type=str, default='Real', help='Real or Mock data')
     parser.add_argument('--eval_type', type=str, default='Windowed', help='Type of evaluation. Windowed, Crops, Scaled')

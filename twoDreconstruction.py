@@ -9,7 +9,6 @@ from tqdm import tqdm
 from skimage.util import view_as_windows
 from models import U_Net, R2U_Net, AttU_Net, R2AttU_Net
 from matplotlib import pyplot as plt
-from datetime import datetime
 
 
 class ReconSet(Dataset):
@@ -141,10 +140,4 @@ class eval_solver:
                 if k == index: # when the section has been saturated
                     sec += self.output_ch # move the section by the number of classes (so result_paths starts at the right index
                     index = self.indexes[int(sec / self.output_ch)] # get the new amount in the next section
-
-    def align(self):
-        pass
-
-    def interpolate(self):
-        pass
 
