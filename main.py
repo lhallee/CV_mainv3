@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 from trainer import Trainer
-#from monai_trainer_multi import Trainer as monaimultiTrainer
+from threeD_reconstruction import eval_solver
 from torch.backends import cudnn
-#from evaluation import eval_solver
 
 def main(config):
     #Takes argpase config settings runs the model with them
@@ -14,15 +13,17 @@ def main(config):
         solver = cross_validator(config)
         solver.run()
 
-    #Train utilizes random weights to train until stopping criteria of the number of epochs
-    #then calls the test function
-    if config.mode == 'train':
+    elif config.mode == 'train':
         if config.multi:
             pass
             #solver = monaimultiTrainer(config)
         else:
             solver = Trainer(config)
         solver.train()
+
+    elif config.mode == 'eval':
+        solver = eval_solver(config)
+        solver.eval()
 
 
 if __name__ == '__main__':
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     parser.add_argument('--num_epochs', type=int, default=10)
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--lr', type=float, default=0.003)
-    parser.add_argument('--loss', type=str, default='MultiNoiseLoss', help='BCE, DiceBCE, IOU, CE, DiceIOU, MultiNoiseLoss')
+    parser.add_argument('--loss', type=str, default='MultiNoiseLoss', help='BCE, DiceBCE, IOU, CE, DiceIOU, Focal')
 
     # Paths
     parser.add_argument('--model_path', type=str, default='None', help='Path for model weights')
@@ -49,9 +50,10 @@ if __name__ == '__main__':
     parser.add_argument('--val_img_path', type=str, default='./tiny_data/val_img_data.npy')
     #parser.add_argument('--val_GT_paths', type=list, default=['./val_GT_1/', './val_GT_2/'])
     parser.add_argument('-ap', '--val_GT_paths', action='append', help='<Required> Set flag', required=True)
+    parser.add_argument('-eap', '--eval_img_paths', action='append', required=False)
 
     # misc
-    parser.add_argument('--mode', type=str, default='train', help='train, eval, CV')
+    parser.add_argument('--mode', type=str, default='train', help='train, eval, CV, align, interpolate')
     parser.add_argument('--cuda_idx', type=int, default=0, help='Cuda index')
     parser.add_argument('--data_type', type=str, default='Real', help='Real or Mock data')
     parser.add_argument('--eval_type', type=str, default='Windowed', help='Type of evaluation. Windowed, Crops, Scaled')

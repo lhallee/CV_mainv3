@@ -12,6 +12,7 @@ class training_processing:
     def __init__(self, config):
         self.train_img_path = config.train_img_path
         self.val_img_path = config.val_img_path
+        self.eval_img_path = config.eval_path
         self.GT_paths = config.GT_paths
         self.dim = config.image_size
         self.num_class = config.num_class
@@ -108,26 +109,17 @@ class training_processing:
 
         return crop_imgs, crop_GTs, val_imgs
 
-def main(config):
-    if config.mode == 'eval':
-        print('Eval')
-        #eval mode is for evaluating the 3D reconstruction capabilities of a model
-        #data_setup = eval_processing(config)
-        #eval_loader, num_col, num_row = data_setup.eval_dataloader()
-        #dataloader of eval data, number of columns in window split, number of rows in window split
-        #solver = eval_solver(config, eval_loader, num_col, num_row)
-        #solver.eval()
 
-    #Can choose between real data in a path or generated data of squares of various sizes
-    elif config.mode == 'train':
-        data_setup = training_processing(config)
-        crop_imgs, crop_GTs, val_imgs = data_setup.to_large_dataarray()
-        mini_imgs, mini_GTs = crop_imgs[1000:2000], crop_GTs[1000:2000]
-        np.save(config.save_path + str(config.image_size) + 'img_data.npy', crop_imgs)
-        np.save(config.save_path + str(config.image_size) + 'GT_data.npy', crop_GTs)
-        np.save(config.save_path + str(config.image_size) + 'val_img_data.npy', val_imgs)
-        np.save(config.save_path + str(config.image_size) + 'mini_img.npy', mini_imgs)
-        np.save(config.save_path + str(config.image_size) + 'mini_GT.npy', mini_GTs)
+def main(config):
+    data_setup = training_processing(config)
+    crop_imgs, crop_GTs, val_imgs = data_setup.to_large_dataarray()
+    mini_imgs, mini_GTs = crop_imgs[1000:2000], crop_GTs[1000:2000]
+    np.save(config.save_path + str(config.image_size) + 'img_data.npy', crop_imgs)
+    np.save(config.save_path + str(config.image_size) + 'GT_data.npy', crop_GTs)
+    np.save(config.save_path + str(config.image_size) + 'val_img_data.npy', val_imgs)
+    np.save(config.save_path + str(config.image_size) + 'mini_img.npy', mini_imgs)
+    np.save(config.save_path + str(config.image_size) + 'mini_GT.npy', mini_GTs)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -145,7 +137,6 @@ if __name__ == '__main__':
     parser.add_argument('--eval_img_path', type=str, default='./img_data/eval_img/',
                         help='Images for 2D reconstruction evaluation')
     parser.add_argument('--save_path', type=str, default='./processed_data/')
-    # misc
-    parser.add_argument('--mode', type=str, default='train', help='train, eval, CV')
+
     config = parser.parse_args()
     main(config)

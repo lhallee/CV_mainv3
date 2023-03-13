@@ -119,6 +119,8 @@ class Trainer(object):
             self.criterion = Dice_IOU_Loss().to(self.device)
         elif self.loss == 'MultiNoiseLoss':
             self.criterion = MultiNoiseLoss(self.num_class).to(self.device)
+        elif self.loss == 'Focal':
+            self.criterion = Focal().to(self.device)
 
         self.optimizer = torch.optim.Adam(list(self.unet.parameters()), self.lr)
         if self.scheduler == 'exp':

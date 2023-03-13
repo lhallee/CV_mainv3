@@ -124,14 +124,11 @@ class IoULoss(nn.Module):
         return 1 - IoU
 
 
-class FocalLoss(nn.Module):
+class Focal(nn.Module):
     def __init__(self, weight=None, size_average=True):
-        super(FocalLoss, self).__init__()
+        super(Focal, self).__init__()
 
     def forward(self, inputs, targets, alpha=0.8, gamma=2, smooth=1):
-        # comment out if your model contains a sigmoid or equivalent activation layer
-        inputs = F.sigmoid(inputs)
-
         # flatten label and prediction tensors
         inputs = inputs.flatten()
         targets = targets.flatten()
